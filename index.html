@@ -1885,78 +1885,11 @@ service cloud.firestore {
         console.log('❌ Invalid admin credentials');
         alert('Invalid username or password');
     }
-                ];
                 
-                data.stores = [
-                    {
-                        id: 'store1',
-                        name: 'Downtown Store',
-                        location: '123 Main St',
-                        manager: 'Jane Smith',
-                        phone: '555-0123'
-                    },
-                    {
-                        id: 'store2',
-                        name: 'Mall Location',
-                        location: '456 Mall Ave',
-                        manager: 'Bob Johnson',
-                        phone: '555-0456'
-                    }
-                ];
-                
-                data.collections = [
-                    {
-                        id: 'col1',
-                        name: 'Premium Wines',
-                        description: 'High-end wine collection'
-                    },
-                    {
-                        id: 'col2',
-                        name: 'Craft Beers',
-                        description: 'Local and imported craft beers'
-                    }
-                ];
-                
-                data.products = [
-                    {
-                        id: 'prod1',
-                        name: 'Cabernet Sauvignon',
-                        price: 25.99,
-                        collectionId: 'col1'
-                    },
-                    {
-                        id: 'prod2',
-                        name: 'IPA Beer',
-                        price: 8.99,
-                        collectionId: 'col2'
-                    },
-                    {
-                        id: 'prod3',
-                        name: 'Chardonnay',
-                        price: 22.99,
-                        collectionId: 'col1'
-                    }
-                ];
-                
-                data.pricing = [
-                    {
-                        id: 'price1',
-                        storeId: 'store1',
-                        productId: 'prod1',
-                        storePrice: 28.99
-                    },
-                    {
-                        id: 'price2',
-                        storeId: 'store2',
-                        productId: 'prod1',
-                        storePrice: 24.99
-                    },
-                    {
-                        id: 'price3',
-                        storeId: 'store1',
-                        productId: 'prod2',
-                        storePrice: 9.99
-                    }
+data.stores = [];
+data.collections = [];
+data.products = [];
+data.pricing = [];
                 ];
                 
                 // Initialize empty sales array
