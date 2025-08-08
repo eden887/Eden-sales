@@ -1361,9 +1361,9 @@
             showSalaryInfo: true
         };
 
-        // Hardcoded Firebase Configuration for Realtime Database
+        // Firebase Configuration - Replace with your actual Firebase project config
         const firebaseConfig = {
-            apiKey: "AIzaSyAHMTS0GTPifnbKWRIjX5JA4l-V4F4oijk",
+    apiKey: "AIzaSyAHMTS0GTPifnbKWRIjX5JA4l-V4F4oijk",
             authDomain: "eden-sale.firebaseapp.com",
             databaseURL: "https://eden-sale-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "eden-sale",
@@ -3213,7 +3213,7 @@
             localStorage.setItem('lastSync', new Date().toISOString());
             updateLastSync();
             
-            if (isFirebaseConnected && db && firebaseUser) {
+            if (isFirebaseConnected && database && firebaseUser) {
                 try {
                     await syncToFirebase();
                 } catch (error) {
@@ -3671,5 +3671,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bcd05bb15fd1f0',t:'MTc1NDYzMzA0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bce7a060baf9d1',t:'MTc1NDYzMzk5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
