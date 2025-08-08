@@ -1441,24 +1441,32 @@ service cloud.firestore {
             showSalaryInfo: true
         };
 
-        // Firebase Configuration - Replace with your actual Firebase project settings
+        // 🔥 FIREBASE CONFIGURATION - REPLACE WITH YOUR ACTUAL PROJECT SETTINGS
+        // Get these values from: Firebase Console → Project Settings → General → Your apps
         const firebaseConfig = {
-            apiKey: "AIzaSyAHMTS0GTPifnbKWRIjX5JA4l-V4F4oijk",
-            authDomain: "eden-sale.firebaseapp.com",
-            projectId: "eden-sales-management",
-            storageBucket: "eden-sale.firebasestorage.app",
-            messagingSenderId: "397135903847",
-            appId: "1:397135903847:web:b8055a22aa90b2003528c2"
+            apiKey: "YOUR_API_KEY_HERE",                    // Replace with your actual API key
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",  // Replace YOUR_PROJECT_ID with your project ID
+            projectId: "YOUR_PROJECT_ID",                   // Replace with your actual project ID
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",   // Replace YOUR_PROJECT_ID with your project ID
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",  // Replace with your actual sender ID
+            appId: "YOUR_APP_ID"                           // Replace with your actual app ID
         };
+
+        // 📋 QUICK SETUP GUIDE:
+        // 1. Go to https://console.firebase.google.com
+        // 2. Create a new project or select existing one
+        // 3. Click "Add app" → Web app (</>) icon
+        // 4. Copy the config object and replace the values above
+        // 5. Enable Firestore Database in your Firebase project
+        // 6. Set up Authentication → Anonymous sign-in method
 
         // Check if Firebase config is properly set
         function isFirebaseConfigValid() {
             return firebaseConfig.apiKey && 
                    firebaseConfig.projectId &&
-                   firebaseConfig.databaseURL &&
-                   firebaseConfig.apiKey.length > 20 &&
-                   firebaseConfig.projectId !== 'demo-project' &&
-                   !firebaseConfig.databaseURL.includes('demo-project');
+                   firebaseConfig.apiKey !== 'YOUR_API_KEY_HERE' &&
+                   firebaseConfig.projectId !== 'YOUR_PROJECT_ID' &&
+                   firebaseConfig.apiKey.length > 20;
         }
 
         // Initialize app
@@ -4216,5 +4224,5 @@ service cloud.firestore {
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bd6f02b3eef9cb',t:'MTc1NDYzOTU0MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bd8020b422f9fc',t:'MTc1NDY0MDI0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
