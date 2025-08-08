@@ -1439,9 +1439,9 @@ service cloud.firestore {
 function markAttendance(employeeId, date) {
     if (!employeeId || !date) return;
     if (isFirebaseConnected && database) {
-        database.collection('attendance').doc(employeeId).set({
+        database.ref('attendance').child(employeeId).update({
             [date]: true
-        }, { merge: true })
+        })
         .then(() => console.log(`📅 Attendance marked for ${employeeId} on ${date}`))
         .catch(err => console.error('Error marking attendance:', err));
     }
@@ -1460,9 +1460,9 @@ function generateAttendanceReport() {
     attReportDiv.innerHTML = '<p>Loading attendance...</p>';
 
     if (isFirebaseConnected && database) {
-        database.collection('attendance').get().then(snapshot => {
+        database.ref('attendance').once('value').then(snapshot => {
             let reportHTML = '<table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th></tr></thead><tbody>';
-            snapshot.forEach(doc => {
+            snapshot.forEach(childSnap => { var doc = { id: childSnap.key, data: () => childSnap.val() };
                 const empId = doc.id;
                 const dates = doc.data();
                 const emp = data.employees.find(e => e.id === empId);
@@ -1489,7 +1489,7 @@ function calculateSalaryWithAttendance(employee) {
         const today = new Date();
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
         const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        return database.collection('attendance').doc(employee.id).get().then(doc => {
+        return database.ref('attendance').child(employee.id).once('value').then(doc => {
             const dates = doc.exists ? doc.data() : {};
             let daysPresent = 0;
             for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
@@ -1501,6 +1501,78 @@ function calculateSalaryWithAttendance(employee) {
         });
     }
     return Promise.resolve({ salary: employee.salaryAmount, daysPresent: null });
+}
+
+
+// ==================== Attendance Tracking ====================
+
+// Record attendance when a sale is recorded
+function markAttendance(employeeId, date) {
+    if (!employeeId || !date) return;
+    if (isFirebaseConnected && database) {
+        database.ref('attendance/' + employeeId + '/' + date).set(true)
+        .then(() => console.log(`📅 Attendance marked for ${employeeId} on ${date}`))
+        .catch(err => console.error('Error marking attendance:', err));
+    }
+}
+
+// Generate attendance report for admin
+function generateAttendanceReport() {
+    const startDate = document.getElementById('attStartDate').value;
+    const endDate = document.getElementById('attEndDate').value;
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+
+    const attReportDiv = document.getElementById('attendanceReport');
+    attReportDiv.innerHTML = '<p>Loading attendance...</p>';
+
+    if (isFirebaseConnected && database) {
+        database.ref('attendance').once('value').then(snapshot => {
+            let reportHTML = '<table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th></tr></thead><tbody>';
+            const allData = snapshot.val() || {};
+            Object.keys(allData).forEach(empId => {
+                const empAttendance = allData[empId];
+                const emp = data.employees.find(e => e.id === empId);
+                for (let d = new Date(startDate); d <= new Date(endDate); d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    const status = empAttendance[dateStr] ? 'Present' : 'Absent';
+                    reportHTML += `<tr><td>${dateStr}</td><td>${emp ? emp.name : empId}</td><td>${status}</td></tr>`;
+                }
+            });
+            reportHTML += '</tbody></table>';
+            attReportDiv.innerHTML = reportHTML;
+        }).catch(err => {
+            console.error('Error fetching attendance:', err);
+            attReportDiv.innerHTML = '<p>Error loading attendance</p>';
+        });
+    } else {
+        attReportDiv.innerHTML = '<p>Offline mode - attendance data not available</p>';
+    }
+}
+
+// Modify salary calculation to include days present for fixed salary
+function calculateSalaryWithAttendance(employee) {
+    return new Promise(resolve => {
+        if (employee.salaryType === 'fixed') {
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            database.ref('attendance/' + employee.id).once('value').then(snapshot => {
+                const dates = snapshot.val() || {};
+                let daysPresent = 0;
+                for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    if (dates[dateStr]) daysPresent++;
+                }
+                const salary = (employee.salaryAmount / 30) * daysPresent;
+                resolve({ salary, daysPresent });
+            });
+        } else {
+            resolve({ salary: employee.salaryAmount, daysPresent: null });
+        }
+    });
 }
 
 </script>
@@ -1511,9 +1583,9 @@ function calculateSalaryWithAttendance(employee) {
 function markAttendance(employeeId, date) {
     if (!employeeId || !date) return;
     if (isFirebaseConnected && database) {
-        database.collection('attendance').doc(employeeId).set({
+        database.ref('attendance').child(employeeId).update({
             [date]: true
-        }, { merge: true })
+        })
         .then(() => console.log(`📅 Attendance marked for ${employeeId} on ${date}`))
         .catch(err => console.error('Error marking attendance:', err));
     }
@@ -1532,9 +1604,9 @@ function generateAttendanceReport() {
     attReportDiv.innerHTML = '<p>Loading attendance...</p>';
 
     if (isFirebaseConnected && database) {
-        database.collection('attendance').get().then(snapshot => {
+        database.ref('attendance').once('value').then(snapshot => {
             let reportHTML = '<table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th></tr></thead><tbody>';
-            snapshot.forEach(doc => {
+            snapshot.forEach(childSnap => { var doc = { id: childSnap.key, data: () => childSnap.val() };
                 const empId = doc.id;
                 const dates = doc.data();
                 const emp = data.employees.find(e => e.id === empId);
@@ -1561,7 +1633,7 @@ function calculateSalaryWithAttendance(employee) {
         const today = new Date();
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
         const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        return database.collection('attendance').doc(employee.id).get().then(doc => {
+        return database.ref('attendance').child(employee.id).once('value').then(doc => {
             const dates = doc.exists ? doc.data() : {};
             let daysPresent = 0;
             for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
@@ -1573,6 +1645,78 @@ function calculateSalaryWithAttendance(employee) {
         });
     }
     return Promise.resolve({ salary: employee.salaryAmount, daysPresent: null });
+}
+
+
+// ==================== Attendance Tracking ====================
+
+// Record attendance when a sale is recorded
+function markAttendance(employeeId, date) {
+    if (!employeeId || !date) return;
+    if (isFirebaseConnected && database) {
+        database.ref('attendance/' + employeeId + '/' + date).set(true)
+        .then(() => console.log(`📅 Attendance marked for ${employeeId} on ${date}`))
+        .catch(err => console.error('Error marking attendance:', err));
+    }
+}
+
+// Generate attendance report for admin
+function generateAttendanceReport() {
+    const startDate = document.getElementById('attStartDate').value;
+    const endDate = document.getElementById('attEndDate').value;
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+
+    const attReportDiv = document.getElementById('attendanceReport');
+    attReportDiv.innerHTML = '<p>Loading attendance...</p>';
+
+    if (isFirebaseConnected && database) {
+        database.ref('attendance').once('value').then(snapshot => {
+            let reportHTML = '<table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th></tr></thead><tbody>';
+            const allData = snapshot.val() || {};
+            Object.keys(allData).forEach(empId => {
+                const empAttendance = allData[empId];
+                const emp = data.employees.find(e => e.id === empId);
+                for (let d = new Date(startDate); d <= new Date(endDate); d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    const status = empAttendance[dateStr] ? 'Present' : 'Absent';
+                    reportHTML += `<tr><td>${dateStr}</td><td>${emp ? emp.name : empId}</td><td>${status}</td></tr>`;
+                }
+            });
+            reportHTML += '</tbody></table>';
+            attReportDiv.innerHTML = reportHTML;
+        }).catch(err => {
+            console.error('Error fetching attendance:', err);
+            attReportDiv.innerHTML = '<p>Error loading attendance</p>';
+        });
+    } else {
+        attReportDiv.innerHTML = '<p>Offline mode - attendance data not available</p>';
+    }
+}
+
+// Modify salary calculation to include days present for fixed salary
+function calculateSalaryWithAttendance(employee) {
+    return new Promise(resolve => {
+        if (employee.salaryType === 'fixed') {
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            database.ref('attendance/' + employee.id).once('value').then(snapshot => {
+                const dates = snapshot.val() || {};
+                let daysPresent = 0;
+                for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    if (dates[dateStr]) daysPresent++;
+                }
+                const salary = (employee.salaryAmount / 30) * daysPresent;
+                resolve({ salary, daysPresent });
+            });
+        } else {
+            resolve({ salary: employee.salaryAmount, daysPresent: null });
+        }
+    });
 }
 
 </script>
@@ -1583,9 +1727,9 @@ function calculateSalaryWithAttendance(employee) {
 function markAttendance(employeeId, date) {
     if (!employeeId || !date) return;
     if (isFirebaseConnected && database) {
-        database.collection('attendance').doc(employeeId).set({
+        database.ref('attendance').child(employeeId).update({
             [date]: true
-        }, { merge: true })
+        })
         .then(() => console.log(`📅 Attendance marked for ${employeeId} on ${date}`))
         .catch(err => console.error('Error marking attendance:', err));
     }
@@ -1604,9 +1748,9 @@ function generateAttendanceReport() {
     attReportDiv.innerHTML = '<p>Loading attendance...</p>';
 
     if (isFirebaseConnected && database) {
-        database.collection('attendance').get().then(snapshot => {
+        database.ref('attendance').once('value').then(snapshot => {
             let reportHTML = '<table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th></tr></thead><tbody>';
-            snapshot.forEach(doc => {
+            snapshot.forEach(childSnap => { var doc = { id: childSnap.key, data: () => childSnap.val() };
                 const empId = doc.id;
                 const dates = doc.data();
                 const emp = data.employees.find(e => e.id === empId);
@@ -1633,7 +1777,7 @@ function calculateSalaryWithAttendance(employee) {
         const today = new Date();
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
         const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        return database.collection('attendance').doc(employee.id).get().then(doc => {
+        return database.ref('attendance').child(employee.id).once('value').then(doc => {
             const dates = doc.exists ? doc.data() : {};
             let daysPresent = 0;
             for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
@@ -1645,6 +1789,78 @@ function calculateSalaryWithAttendance(employee) {
         });
     }
     return Promise.resolve({ salary: employee.salaryAmount, daysPresent: null });
+}
+
+
+// ==================== Attendance Tracking ====================
+
+// Record attendance when a sale is recorded
+function markAttendance(employeeId, date) {
+    if (!employeeId || !date) return;
+    if (isFirebaseConnected && database) {
+        database.ref('attendance/' + employeeId + '/' + date).set(true)
+        .then(() => console.log(`📅 Attendance marked for ${employeeId} on ${date}`))
+        .catch(err => console.error('Error marking attendance:', err));
+    }
+}
+
+// Generate attendance report for admin
+function generateAttendanceReport() {
+    const startDate = document.getElementById('attStartDate').value;
+    const endDate = document.getElementById('attEndDate').value;
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+
+    const attReportDiv = document.getElementById('attendanceReport');
+    attReportDiv.innerHTML = '<p>Loading attendance...</p>';
+
+    if (isFirebaseConnected && database) {
+        database.ref('attendance').once('value').then(snapshot => {
+            let reportHTML = '<table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th></tr></thead><tbody>';
+            const allData = snapshot.val() || {};
+            Object.keys(allData).forEach(empId => {
+                const empAttendance = allData[empId];
+                const emp = data.employees.find(e => e.id === empId);
+                for (let d = new Date(startDate); d <= new Date(endDate); d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    const status = empAttendance[dateStr] ? 'Present' : 'Absent';
+                    reportHTML += `<tr><td>${dateStr}</td><td>${emp ? emp.name : empId}</td><td>${status}</td></tr>`;
+                }
+            });
+            reportHTML += '</tbody></table>';
+            attReportDiv.innerHTML = reportHTML;
+        }).catch(err => {
+            console.error('Error fetching attendance:', err);
+            attReportDiv.innerHTML = '<p>Error loading attendance</p>';
+        });
+    } else {
+        attReportDiv.innerHTML = '<p>Offline mode - attendance data not available</p>';
+    }
+}
+
+// Modify salary calculation to include days present for fixed salary
+function calculateSalaryWithAttendance(employee) {
+    return new Promise(resolve => {
+        if (employee.salaryType === 'fixed') {
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            database.ref('attendance/' + employee.id).once('value').then(snapshot => {
+                const dates = snapshot.val() || {};
+                let daysPresent = 0;
+                for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    if (dates[dateStr]) daysPresent++;
+                }
+                const salary = (employee.salaryAmount / 30) * daysPresent;
+                resolve({ salary, daysPresent });
+            });
+        } else {
+            resolve({ salary: employee.salaryAmount, daysPresent: null });
+        }
+    });
 }
 
 </script>
@@ -1680,10 +1896,11 @@ function calculateSalaryWithAttendance(employee) {
         // 🔥 FIREBASE CONFIGURATION - REPLACE WITH YOUR ACTUAL PROJECT SETTINGS
         // Get these values from: Firebase Console → Project Settings → General → Your apps
         const firebaseConfig = {
+  databaseURL: "https://eden-sales-system-32521-default-rtdb.asia-southeast1.firebasedatabase.app",
   apiKey: "AIzaSyAAKfNbkkckqOPQsgwF__jT0t2KGgbbh_0",
   authDomain: "eden-sales-system-32521.firebaseapp.com",
   projectId: "eden-sales-system-32521",
-  storageBucket: "eden-sales-c2ad1.appspot.com",
+  storageBucket: "eden-sales-system-32521.appspot.com",
   messagingSenderId: "13175034434",
   appId: "1:13175034434:web:13f9e559006634712f53db",
   measurementId: "G-5FD05PTD8C"
@@ -3664,7 +3881,7 @@ function calculateSalaryWithAttendance(employee) {
                 
                 // Update sync metadata
                 try {
-                    await database.collection(`users/${firebaseUser.uid}/metadata`).doc('sync_info').set({
+                    await database.collection(`users/${firebaseUser.uid}/metadata`).child('sync_info').set({
                         lastSync: firebase.firestore.FieldValue.serverTimestamp(),
                         syncedAt: new Date().toISOString(),
                         processedItems: processedCount,
@@ -3748,12 +3965,12 @@ function calculateSalaryWithAttendance(employee) {
                     try {
                         console.log(`📦 Loading ${collectionName} collection...`);
                         const collectionRef = database.collection(`users/${firebaseUser.uid}/${collectionName}`);
-                        const snapshot = await collectionRef.orderBy('lastModified', 'desc').get();
+                        const snapshot = await collectionRef.orderBy('lastModified', 'desc').once('value');
                         
                         data[collectionName] = [];
                         
                         if (!snapshot.empty) {
-                            snapshot.forEach(doc => {
+                            snapshot.forEach(childSnap => { var doc = { id: childSnap.key, data: () => childSnap.val() };
                                 const item = { ...doc.data() };
                                 
                                 // Clean up Firebase metadata
@@ -4211,7 +4428,7 @@ function calculateSalaryWithAttendance(employee) {
                     console.log('✅ Anonymous authentication successful:', firebaseUser.uid);
                     
                     // Test Firestore read/write with timeout
-                    const testRef = database.collection('connection_test').doc('test');
+                    const testRef = database.ref('connection_test').doc('test');
                     const testData = { timestamp: Date.now(), test: true };
                     
                     // Set a timeout for the connection test
@@ -4224,7 +4441,7 @@ function calculateSalaryWithAttendance(employee) {
                     console.log('✅ Firestore write test successful');
                     
                     // Try to read test data with timeout
-                    const snapshot = await Promise.race([testRef.get(), timeoutPromise]);
+                    const snapshot = await Promise.race([testRef.once('value'), timeoutPromise]);
                     const readData = snapshot.data();
                     
                     if (readData && readData.test === true) {
@@ -4467,9 +4684,9 @@ function calculateSalaryWithAttendance(employee) {
 function markAttendance(employeeId, date) {
     if (!employeeId || !date) return;
     if (isFirebaseConnected && database) {
-        database.collection('attendance').doc(employeeId).set({
+        database.ref('attendance').child(employeeId).update({
             [date]: true
-        }, { merge: true })
+        })
         .then(() => console.log(`📅 Attendance marked for ${employeeId} on ${date}`))
         .catch(err => console.error('Error marking attendance:', err));
     }
@@ -4488,9 +4705,9 @@ function generateAttendanceReport() {
     attReportDiv.innerHTML = '<p>Loading attendance...</p>';
 
     if (isFirebaseConnected && database) {
-        database.collection('attendance').get().then(snapshot => {
+        database.ref('attendance').once('value').then(snapshot => {
             let reportHTML = '<table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th></tr></thead><tbody>';
-            snapshot.forEach(doc => {
+            snapshot.forEach(childSnap => { var doc = { id: childSnap.key, data: () => childSnap.val() };
                 const empId = doc.id;
                 const dates = doc.data();
                 const emp = data.employees.find(e => e.id === empId);
@@ -4517,7 +4734,7 @@ function calculateSalaryWithAttendance(employee) {
         const today = new Date();
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
         const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        return database.collection('attendance').doc(employee.id).get().then(doc => {
+        return database.ref('attendance').child(employee.id).once('value').then(doc => {
             const dates = doc.exists ? doc.data() : {};
             let daysPresent = 0;
             for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
@@ -4529,6 +4746,78 @@ function calculateSalaryWithAttendance(employee) {
         });
     }
     return Promise.resolve({ salary: employee.salaryAmount, daysPresent: null });
+}
+
+
+// ==================== Attendance Tracking ====================
+
+// Record attendance when a sale is recorded
+function markAttendance(employeeId, date) {
+    if (!employeeId || !date) return;
+    if (isFirebaseConnected && database) {
+        database.ref('attendance/' + employeeId + '/' + date).set(true)
+        .then(() => console.log(`📅 Attendance marked for ${employeeId} on ${date}`))
+        .catch(err => console.error('Error marking attendance:', err));
+    }
+}
+
+// Generate attendance report for admin
+function generateAttendanceReport() {
+    const startDate = document.getElementById('attStartDate').value;
+    const endDate = document.getElementById('attEndDate').value;
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+
+    const attReportDiv = document.getElementById('attendanceReport');
+    attReportDiv.innerHTML = '<p>Loading attendance...</p>';
+
+    if (isFirebaseConnected && database) {
+        database.ref('attendance').once('value').then(snapshot => {
+            let reportHTML = '<table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th></tr></thead><tbody>';
+            const allData = snapshot.val() || {};
+            Object.keys(allData).forEach(empId => {
+                const empAttendance = allData[empId];
+                const emp = data.employees.find(e => e.id === empId);
+                for (let d = new Date(startDate); d <= new Date(endDate); d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    const status = empAttendance[dateStr] ? 'Present' : 'Absent';
+                    reportHTML += `<tr><td>${dateStr}</td><td>${emp ? emp.name : empId}</td><td>${status}</td></tr>`;
+                }
+            });
+            reportHTML += '</tbody></table>';
+            attReportDiv.innerHTML = reportHTML;
+        }).catch(err => {
+            console.error('Error fetching attendance:', err);
+            attReportDiv.innerHTML = '<p>Error loading attendance</p>';
+        });
+    } else {
+        attReportDiv.innerHTML = '<p>Offline mode - attendance data not available</p>';
+    }
+}
+
+// Modify salary calculation to include days present for fixed salary
+function calculateSalaryWithAttendance(employee) {
+    return new Promise(resolve => {
+        if (employee.salaryType === 'fixed') {
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            database.ref('attendance/' + employee.id).once('value').then(snapshot => {
+                const dates = snapshot.val() || {};
+                let daysPresent = 0;
+                for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    if (dates[dateStr]) daysPresent++;
+                }
+                const salary = (employee.salaryAmount / 30) * daysPresent;
+                resolve({ salary, daysPresent });
+            });
+        } else {
+            resolve({ salary: employee.salaryAmount, daysPresent: null });
+        }
+    });
 }
 
 </script>
@@ -4539,9 +4828,9 @@ function calculateSalaryWithAttendance(employee) {
 function markAttendance(employeeId, date) {
     if (!employeeId || !date) return;
     if (isFirebaseConnected && database) {
-        database.collection('attendance').doc(employeeId).set({
+        database.ref('attendance').child(employeeId).update({
             [date]: true
-        }, { merge: true })
+        })
         .then(() => console.log(`📅 Attendance marked for ${employeeId} on ${date}`))
         .catch(err => console.error('Error marking attendance:', err));
     }
@@ -4560,9 +4849,9 @@ function generateAttendanceReport() {
     attReportDiv.innerHTML = '<p>Loading attendance...</p>';
 
     if (isFirebaseConnected && database) {
-        database.collection('attendance').get().then(snapshot => {
+        database.ref('attendance').once('value').then(snapshot => {
             let reportHTML = '<table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th></tr></thead><tbody>';
-            snapshot.forEach(doc => {
+            snapshot.forEach(childSnap => { var doc = { id: childSnap.key, data: () => childSnap.val() };
                 const empId = doc.id;
                 const dates = doc.data();
                 const emp = data.employees.find(e => e.id === empId);
@@ -4589,7 +4878,7 @@ function calculateSalaryWithAttendance(employee) {
         const today = new Date();
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
         const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        return database.collection('attendance').doc(employee.id).get().then(doc => {
+        return database.ref('attendance').child(employee.id).once('value').then(doc => {
             const dates = doc.exists ? doc.data() : {};
             let daysPresent = 0;
             for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
@@ -4601,6 +4890,78 @@ function calculateSalaryWithAttendance(employee) {
         });
     }
     return Promise.resolve({ salary: employee.salaryAmount, daysPresent: null });
+}
+
+
+// ==================== Attendance Tracking ====================
+
+// Record attendance when a sale is recorded
+function markAttendance(employeeId, date) {
+    if (!employeeId || !date) return;
+    if (isFirebaseConnected && database) {
+        database.ref('attendance/' + employeeId + '/' + date).set(true)
+        .then(() => console.log(`📅 Attendance marked for ${employeeId} on ${date}`))
+        .catch(err => console.error('Error marking attendance:', err));
+    }
+}
+
+// Generate attendance report for admin
+function generateAttendanceReport() {
+    const startDate = document.getElementById('attStartDate').value;
+    const endDate = document.getElementById('attEndDate').value;
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+
+    const attReportDiv = document.getElementById('attendanceReport');
+    attReportDiv.innerHTML = '<p>Loading attendance...</p>';
+
+    if (isFirebaseConnected && database) {
+        database.ref('attendance').once('value').then(snapshot => {
+            let reportHTML = '<table class="table"><thead><tr><th>Date</th><th>Employee</th><th>Status</th></tr></thead><tbody>';
+            const allData = snapshot.val() || {};
+            Object.keys(allData).forEach(empId => {
+                const empAttendance = allData[empId];
+                const emp = data.employees.find(e => e.id === empId);
+                for (let d = new Date(startDate); d <= new Date(endDate); d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    const status = empAttendance[dateStr] ? 'Present' : 'Absent';
+                    reportHTML += `<tr><td>${dateStr}</td><td>${emp ? emp.name : empId}</td><td>${status}</td></tr>`;
+                }
+            });
+            reportHTML += '</tbody></table>';
+            attReportDiv.innerHTML = reportHTML;
+        }).catch(err => {
+            console.error('Error fetching attendance:', err);
+            attReportDiv.innerHTML = '<p>Error loading attendance</p>';
+        });
+    } else {
+        attReportDiv.innerHTML = '<p>Offline mode - attendance data not available</p>';
+    }
+}
+
+// Modify salary calculation to include days present for fixed salary
+function calculateSalaryWithAttendance(employee) {
+    return new Promise(resolve => {
+        if (employee.salaryType === 'fixed') {
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            database.ref('attendance/' + employee.id).once('value').then(snapshot => {
+                const dates = snapshot.val() || {};
+                let daysPresent = 0;
+                for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
+                    const dateStr = d.toISOString().split('T')[0];
+                    if (dates[dateStr]) daysPresent++;
+                }
+                const salary = (employee.salaryAmount / 30) * daysPresent;
+                resolve({ salary, daysPresent });
+            });
+        } else {
+            resolve({ salary: employee.salaryAmount, daysPresent: null });
+        }
+    });
 }
 
 </script></body>
