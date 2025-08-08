@@ -1669,54 +1669,61 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
-            // Load data from Firebase first if connected
-            if (isFirebaseConnected) {
-                await loadFromFirebase();
+            // First authenticate with Firebase to get proper access
+            if (isFirebaseConnected && auth) {
+                try {
+                    const email = `${username}@eden-sales.com`;
+                    
+                    // Try to sign in first
+                    try {
+                        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                        firebaseUser = userCredential.user;
+                        console.log('Firebase user signed in:', firebaseUser.uid);
+                        
+                        // Now load data from Firebase with authenticated user
+                        await loadFromFirebase();
+                        
+                    } catch (signInError) {
+                        if (signInError.code === 'auth/user-not-found') {
+                            // Create new Firebase user first
+                            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                            firebaseUser = userCredential.user;
+                            console.log('New Firebase user created:', firebaseUser.uid);
+                            
+                            // Load sample data first time
+                            loadSampleData();
+                            
+                            // Sync sample data to Firebase
+                            await syncToFirebase();
+                            
+                            showAlert('Firebase account created and data synced! 🔥', 'success');
+                            
+                        } else {
+                            console.error('Firebase authentication error:', signInError);
+                            // Fall back to local mode
+                            loadFromLocalStorage();
+                        }
+                    }
+                    
+                    // Setup real-time listeners after authentication
+                    if (firebaseUser) {
+                        setupRealtimeListeners();
+                    }
+                    
+                } catch (authError) {
+                    console.error('Firebase authentication error:', authError);
+                    loadFromLocalStorage();
+                }
+            } else {
+                // No Firebase connection - use local storage
+                loadFromLocalStorage();
             }
             
-            // Find user in employees data
+            // Find user in employees data (now loaded from Firebase or local)
             const user = data.employees.find(emp => emp.username === username && emp.password === password);
             
             if (user) {
                 currentUser = user;
-                
-                // If Firebase is connected, try to authenticate
-                if (isFirebaseConnected && auth) {
-                    try {
-                        const email = `${username}@eden-sales.com`;
-                        
-                        // Try to sign in, if user doesn't exist, create them
-                        try {
-                            const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                            firebaseUser = userCredential.user;
-                            console.log('Firebase user signed in:', firebaseUser.uid);
-                            setupRealtimeListeners();
-                            
-                        } catch (signInError) {
-                            if (signInError.code === 'auth/user-not-found') {
-                                // Create new Firebase user
-                                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                                firebaseUser = userCredential.user;
-                                
-                                // Update display name
-                                await firebaseUser.updateProfile({
-                                    displayName: user.name
-                                });
-                                
-                                console.log('New Firebase user created:', firebaseUser.uid);
-                                showAlert('Firebase account created successfully! 🔥', 'success');
-                                setupRealtimeListeners();
-                                
-                            } else {
-                                console.error('Firebase authentication error:', signInError);
-                                // Continue with local login
-                            }
-                        }
-                    } catch (authError) {
-                        console.error('Firebase authentication error:', authError);
-                        // Continue with local login
-                    }
-                }
                 
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
@@ -3024,31 +3031,57 @@
                 return;
             }
             
+            // Check if user is authenticated
+            if (!firebaseUser) {
+                console.log('User not authenticated - skipping Firebase sync');
+                return;
+            }
+            
             try {
+                console.log('Starting Firebase sync for user:', firebaseUser.uid);
+                
                 // Sync each collection
                 const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
                 
                 for (const collectionName of collections) {
+                    console.log(`Syncing ${collectionName} collection...`);
+                    
                     // Use individual document operations instead of batch for better error handling
                     for (const item of data[collectionName]) {
                         try {
                             const docRef = db.collection(collectionName).doc(item.id);
-                            await docRef.set({
+                            const docData = {
                                 ...item,
                                 lastModified: firebase.firestore.FieldValue.serverTimestamp(),
-                                syncedAt: new Date().toISOString()
-                            }, { merge: true });
+                                syncedAt: new Date().toISOString(),
+                                userId: firebaseUser.uid // Track which user created/modified this
+                            };
+                            
+                            await docRef.set(docData, { merge: true });
+                            console.log(`Synced ${collectionName}/${item.id}`);
+                            
                         } catch (docError) {
                             console.error(`Error syncing ${collectionName} document ${item.id}:`, docError);
-                            // Continue with other documents even if one fails
+                            
+                            // If it's a permission error, show user-friendly message
+                            if (docError.code === 'permission-denied') {
+                                showAlert(`Permission denied - please check Firebase rules`, 'error');
+                            }
                         }
                     }
                 }
                 
                 console.log('Data synced to Firebase successfully');
+                showAlert('Data synced to Firebase! 🔥', 'success');
+                
             } catch (error) {
                 console.error('Error syncing to Firebase:', error);
-                // Don't throw error - allow local storage to continue working
+                
+                if (error.code === 'permission-denied') {
+                    showAlert('Firebase permission denied - check authentication', 'error');
+                } else {
+                    showAlert('Sync error - data saved locally', 'error');
+                }
             }
         }
 
@@ -3059,12 +3092,22 @@
                 return;
             }
             
+            // Check if user is authenticated
+            if (!firebaseUser) {
+                console.log('User not authenticated - loading from local storage');
+                loadFromLocalStorage();
+                return;
+            }
+            
             try {
+                console.log('Loading data from Firebase for user:', firebaseUser.uid);
+                
                 const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
                 let hasData = false;
                 
                 for (const collectionName of collections) {
                     try {
+                        console.log(`Loading ${collectionName} collection...`);
                         const snapshot = await db.collection(collectionName).get();
                         data[collectionName] = [];
                         
@@ -3074,12 +3117,21 @@
                             delete docData.lastModified;
                             delete docData.modifiedBy;
                             delete docData.syncedAt;
+                            delete docData.userId;
                             data[collectionName].push(docData);
                             hasData = true;
                         });
+                        
+                        console.log(`Loaded ${data[collectionName].length} items from ${collectionName}`);
+                        
                     } catch (collectionError) {
                         console.error(`Error loading ${collectionName} from Firebase:`, collectionError);
-                        // Initialize empty array if collection doesn't exist
+                        
+                        if (collectionError.code === 'permission-denied') {
+                            console.log(`Permission denied for ${collectionName} - user may not be authenticated properly`);
+                        }
+                        
+                        // Initialize empty array if collection doesn't exist or has permission issues
                         if (!data[collectionName]) {
                             data[collectionName] = [];
                         }
@@ -3091,9 +3143,15 @@
                 
                 if (hasData) {
                     console.log('Data loaded from Firebase successfully');
+                    showAlert('Data loaded from Firebase! 🔥', 'success');
                 } else {
                     console.log('No data found in Firebase - using local/sample data');
                     loadFromLocalStorage();
+                    // If no data exists, load sample data and sync it
+                    if (data.employees.length === 0) {
+                        loadSampleData();
+                        await syncToFirebase();
+                    }
                 }
                 
                 // Refresh UI if user is logged in
@@ -3107,23 +3165,36 @@
                 
             } catch (error) {
                 console.error('Error loading from Firebase:', error);
+                
+                if (error.code === 'permission-denied') {
+                    showAlert('Firebase permission denied - using local data', 'error');
+                }
+                
                 loadFromLocalStorage();
             }
         }
 
         function setupRealtimeListeners() {
-            if (!isFirebaseConnected || !db) return;
+            if (!isFirebaseConnected || !db || !firebaseUser) {
+                console.log('Cannot setup real-time listeners - Firebase not connected or user not authenticated');
+                return;
+            }
+            
+            console.log('Setting up real-time listeners for user:', firebaseUser.uid);
             
             const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
             
             collections.forEach(collectionName => {
                 const unsubscribe = db.collection(collectionName).onSnapshot(
                     (snapshot) => {
+                        console.log(`Real-time update received for ${collectionName}`);
                         data[collectionName] = [];
                         snapshot.forEach(doc => {
                             const docData = doc.data();
                             delete docData.lastModified;
                             delete docData.modifiedBy;
+                            delete docData.syncedAt;
+                            delete docData.userId;
                             data[collectionName].push(docData);
                         });
                         
@@ -3143,11 +3214,18 @@
                     },
                     (error) => {
                         console.error(`Error listening to ${collectionName}:`, error);
+                        
+                        if (error.code === 'permission-denied') {
+                            console.log(`Permission denied for real-time updates on ${collectionName}`);
+                            showAlert('Real-time sync disabled - permission denied', 'error');
+                        }
                     }
                 );
                 
                 unsubscribeListeners.push(unsubscribe);
             });
+            
+            console.log('Real-time listeners setup complete');
         }
 
         function updateAdminTables() {
@@ -3337,6 +3415,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bca4269715f9e7',t:'MTc1NDYzMTIzMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bcbefc0741f9d7',t:'MTc1NDYzMjMyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
-
