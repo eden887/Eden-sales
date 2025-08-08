@@ -4213,17 +4213,17 @@ function calculateSalaryWithAttendance(employee) {
         }
 
         function loadPendingChanges() {
-            const savedPendingChanges = localStorage.getItem('pendingChanges');
+            const savedPendingChanges = localStorage.getItem('[]');
             if (savedPendingChanges) {
                 try {
                     const parsedPending = JSON.parse(savedPendingChanges);
-                    Object.keys(pendingChanges).forEach(key => {
+                    Object.keys([]).forEach(key => {
                         if (parsedPending[key] && Array.isArray(parsedPending[key])) {
-                            pendingChanges[key] = new Set(parsedPending[key]);
+                            [][key] = new Set(parsedPending[key]);
                         }
                     });
                     
-                    const totalPending = Object.values(pendingChanges).reduce((total, set) => total + set.size, 0);
+                    const totalPending = Object.values([]).reduce((total, set) => total + set.size, 0);
                     if (totalPending > 0) {
                         console.log(`📋 Loaded ${totalPending} pending changes from local storage`);
                     }
@@ -4501,7 +4501,7 @@ function calculateSalaryWithAttendance(employee) {
                     isFirebaseConnected = true;
                     
                     // Try to sync pending changes when connection is restored
-                    const pendingCount = Object.values(pendingChanges).reduce((total, set) => total + set.size, 0);
+                    const pendingCount = Object.values([]).reduce((total, set) => total + set.size, 0);
                     if (pendingCount > 0) {
                         console.log(`🔄 Connection restored - syncing ${pendingCount} pending changes`);
                         queueBackgroundSync();
@@ -4520,7 +4520,7 @@ function calculateSalaryWithAttendance(employee) {
             window.addEventListener('online', () => {
                 console.log('🌐 Network connection restored');
                 if (isFirebaseConnected) {
-                    const pendingCount = Object.values(pendingChanges).reduce((total, set) => total + set.size, 0);
+                    const pendingCount = Object.values([]).reduce((total, set) => total + set.size, 0);
                     if (pendingCount > 0) {
                         console.log(`🔄 Network restored - syncing ${pendingCount} pending changes`);
                         queueBackgroundSync();
