@@ -850,6 +850,7 @@
                     <button class="tab active" data-tab="employees">👥 Employees</button>
                     <button class="tab" data-tab="stores">🏪 Stores</button>
                     <button class="tab" data-tab="products">📦 Products</button>
+                    <button class="tab" data-tab="collections">📂 Collections</button>
                     <button class="tab" data-tab="pricing">💰 Pricing</button>
                     <button class="tab" data-tab="sales">📊 Sales</button>
                     <button class="tab" data-tab="salary">💰 Salary</button>
@@ -949,6 +950,38 @@
                         </div>
                         <!-- Mobile Cards -->
                         <div id="productsMobile" class="hidden">
+                            <!-- Mobile cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collections Tab -->
+                <div id="collections" class="tab-content">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2>📂 Collections</h2>
+                            <button class="btn btn-primary" onclick="openModal('collectionModal')">
+                                ➕ Add Collection
+                            </button>
+                        </div>
+                        <!-- Desktop Table -->
+                        <div class="table-responsive" id="collectionsTableDesktop">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Products Count</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="collectionsTable">
+                                    <!-- Collections will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Mobile Cards -->
+                        <div id="collectionsMobile" class="hidden">
                             <!-- Mobile cards will be populated here -->
                         </div>
                     </div>
@@ -1243,6 +1276,27 @@
         </div>
     </div>
 
+    <!-- Collection Modal -->
+    <div id="collectionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Collection</h3>
+                <button class="close-btn" onclick="closeModal('collectionModal')">&times;</button>
+            </div>
+            <form id="collectionForm">
+                <div class="form-group">
+                    <label for="collectionName">Collection Name</label>
+                    <input type="text" id="collectionName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="collectionDescription">Description</label>
+                    <textarea id="collectionDescription" class="form-control" rows="3" placeholder="Optional description"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Collection</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Pricing Modal -->
     <div id="pricingModal" class="modal">
         <div class="modal-content">
@@ -1280,7 +1334,7 @@
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
     <script>
@@ -1288,7 +1342,7 @@
         let currentUser = null;
         let firebaseUser = null;
         let isFirebaseConnected = false;
-        let db = null;
+        let database = null;
         let auth = null;
         let syncQueue = [];
         let data = {
@@ -1307,10 +1361,11 @@
             showSalaryInfo: true
         };
 
-        // Hardcoded Firebase Configuration
+        // Hardcoded Firebase Configuration for Realtime Database
         const firebaseConfig = {
             apiKey: "AIzaSyAHMTS0GTPifnbKWRIjX5JA4l-V4F4oijk",
             authDomain: "eden-sale.firebaseapp.com",
+            databaseURL: "https://eden-sale-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "eden-sale",
             storageBucket: "eden-sale.firebasestorage.app",
             messagingSenderId: "397135903847",
@@ -1584,7 +1639,7 @@
                 const isMobile = window.innerWidth <= 768;
                 
                 // Toggle table/card views
-                const tables = ['employees', 'stores', 'products', 'pricing'];
+                const tables = ['employees', 'stores', 'products', 'collections', 'pricing'];
                 tables.forEach(table => {
                     const desktopTable = document.getElementById(`${table}TableDesktop`);
                     const mobileCards = document.getElementById(`${table}Mobile`);
@@ -1661,6 +1716,7 @@
             document.getElementById('employeeForm').addEventListener('submit', handleEmployeeSubmit);
             document.getElementById('storeForm').addEventListener('submit', handleStoreSubmit);
             document.getElementById('productForm').addEventListener('submit', handleProductSubmit);
+            document.getElementById('collectionForm').addEventListener('submit', handleCollectionSubmit);
             document.getElementById('pricingForm').addEventListener('submit', handlePricingSubmit);
         }
 
@@ -1669,53 +1725,82 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
+            console.log('🔐 Starting login process for:', username);
+            
             // First authenticate with Firebase to get proper access
             if (isFirebaseConnected && auth) {
                 try {
                     const email = `${username}@eden-sales.com`;
+                    console.log('🔥 Attempting Firebase authentication for:', email);
                     
                     // Try to sign in first
                     try {
                         const userCredential = await auth.signInWithEmailAndPassword(email, password);
                         firebaseUser = userCredential.user;
-                        console.log('Firebase user signed in:', firebaseUser.uid);
+                        console.log('✅ Firebase user signed in successfully:', firebaseUser.uid);
                         
                         // Now load data from Firebase with authenticated user
                         await loadFromFirebase();
                         
                     } catch (signInError) {
-                        if (signInError.code === 'auth/user-not-found') {
-                            // Create new Firebase user first
-                            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                            firebaseUser = userCredential.user;
-                            console.log('New Firebase user created:', firebaseUser.uid);
+                        console.log('⚠️ Sign in failed:', signInError.code);
+                        
+                        if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/wrong-password') {
+                            console.log('🆕 Creating new Firebase user...');
                             
-                            // Load sample data first time
-                            loadSampleData();
-                            
-                            // Sync sample data to Firebase
-                            await syncToFirebase();
-                            
-                            showAlert('Firebase account created and data synced! 🔥', 'success');
-                            
+                            try {
+                                // Create new Firebase user first
+                                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                                firebaseUser = userCredential.user;
+                                console.log('✅ New Firebase user created:', firebaseUser.uid);
+                                
+                                // Load sample data first time
+                                loadSampleData();
+                                console.log('📦 Sample data loaded');
+                                
+                                // Wait a moment for Firebase to be ready
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+                                
+                                // Sync sample data to Firebase
+                                await syncToFirebase();
+                                
+                                showAlert('Firebase account created and data synced! 🔥', 'success');
+                                
+                            } catch (createError) {
+                                console.error('❌ Error creating Firebase user:', createError);
+                                // If user already exists, try signing in again
+                                if (createError.code === 'auth/email-already-in-use') {
+                                    try {
+                                        const retryCredential = await auth.signInWithEmailAndPassword(email, password);
+                                        firebaseUser = retryCredential.user;
+                                        console.log('✅ Firebase user signed in on retry:', firebaseUser.uid);
+                                        await loadFromFirebase();
+                                    } catch (retryError) {
+                                        console.error('❌ Retry sign in failed:', retryError);
+                                        loadFromLocalStorage();
+                                    }
+                                } else {
+                                    loadFromLocalStorage();
+                                }
+                            }
                         } else {
-                            console.error('Firebase authentication error:', signInError);
-                            // Fall back to local mode
+                            console.error('❌ Firebase authentication error:', signInError);
                             loadFromLocalStorage();
                         }
                     }
                     
                     // Setup real-time listeners after authentication
                     if (firebaseUser) {
+                        console.log('🔄 Setting up real-time listeners...');
                         setupRealtimeListeners();
                     }
                     
                 } catch (authError) {
-                    console.error('Firebase authentication error:', authError);
+                    console.error('❌ Firebase authentication error:', authError);
                     loadFromLocalStorage();
                 }
             } else {
-                // No Firebase connection - use local storage
+                console.log('💾 No Firebase connection - using local storage');
                 loadFromLocalStorage();
             }
             
@@ -1724,6 +1809,7 @@
             
             if (user) {
                 currentUser = user;
+                console.log('👤 User found:', user.name, 'Role:', user.role);
                 
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('mainApp').classList.remove('hidden');
@@ -1737,6 +1823,7 @@
                     loadEmployeeData();
                 }
             } else {
+                console.log('❌ User not found in employee data');
                 alert('Invalid username or password');
             }
         }
@@ -1776,8 +1863,10 @@
             populateEmployeesTable();
             populateStoresTable();
             populateProductsTable();
+            populateCollectionsTable();
             populatePricingTable();
             populatePricingDropdowns();
+            populateCollectionDropdown();
         }
 
         function populateStoreDropdown() {
@@ -2150,12 +2239,16 @@
             mobileContainer.innerHTML = '';
             
             data.products.forEach(product => {
+                // Find collection name
+                const collection = data.collections.find(c => c.id === product.collectionId);
+                const collectionName = collection ? collection.name : 'No Collection';
+                
                 // Desktop table row
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${product.name}</td>
                     <td>$${product.price}</td>
-                    <td>Base Product</td>
+                    <td>${collectionName}</td>
                     <td>
                         <button class="btn btn-secondary" onclick="editProduct('${product.id}')">✏️</button>
                         <button class="btn btn-danger" onclick="deleteProduct('${product.id}')">🗑️</button>
@@ -2172,12 +2265,56 @@
                         <span style="font-size: 0.8rem; color: rgba(248, 249, 250, 0.6);">$${product.price}</span>
                     </div>
                     <div class="admin-mobile-content">
-                        <div>💰 Base Price: $${product.price}</div>
-                        <div>📂 Collection: Base Product</div>
+                        <div>💰 Price: $${product.price}</div>
+                        <div>📂 Collection: ${collectionName}</div>
                     </div>
                     <div class="admin-mobile-actions">
                         <button class="btn btn-secondary" onclick="editProduct('${product.id}')">✏️ Edit</button>
                         <button class="btn btn-danger" onclick="deleteProduct('${product.id}')">🗑️ Delete</button>
+                    </div>
+                `;
+                mobileContainer.appendChild(card);
+            });
+        }
+
+        function populateCollectionsTable() {
+            const tbody = document.getElementById('collectionsTable');
+            const mobileContainer = document.getElementById('collectionsMobile');
+            tbody.innerHTML = '';
+            mobileContainer.innerHTML = '';
+            
+            data.collections.forEach(collection => {
+                // Count products in this collection
+                const productCount = data.products.filter(p => p.collectionId === collection.id).length;
+                
+                // Desktop table row
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${collection.name}</td>
+                    <td>${collection.description || 'No description'}</td>
+                    <td>${productCount} products</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="editCollection('${collection.id}')">✏️</button>
+                        <button class="btn btn-danger" onclick="deleteCollection('${collection.id}')">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+                
+                // Mobile card
+                const card = document.createElement('div');
+                card.className = 'admin-mobile-card';
+                card.innerHTML = `
+                    <div class="admin-mobile-header">
+                        <span>📂 ${collection.name}</span>
+                        <span style="font-size: 0.8rem; color: rgba(248, 249, 250, 0.6);">${productCount} products</span>
+                    </div>
+                    <div class="admin-mobile-content">
+                        <div>📝 Description: ${collection.description || 'No description'}</div>
+                        <div>📦 Products: ${productCount}</div>
+                    </div>
+                    <div class="admin-mobile-actions">
+                        <button class="btn btn-secondary" onclick="editCollection('${collection.id}')">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="deleteCollection('${collection.id}')">🗑️ Delete</button>
                     </div>
                 `;
                 mobileContainer.appendChild(card);
@@ -2357,20 +2494,81 @@
 
         function handleProductSubmit(e) {
             e.preventDefault();
+            const form = e.target;
+            const editId = form.dataset.editId;
+            
             const product = {
-                id: generateId(),
+                id: editId || generateId(),
                 name: document.getElementById('productName').value,
                 price: parseFloat(document.getElementById('productPrice').value),
                 collectionId: document.getElementById('productCollection').value || null
             };
             
-            data.products.push(product);
+            if (editId) {
+                // Update existing product
+                const index = data.products.findIndex(p => p.id === editId);
+                if (index !== -1) {
+                    data.products[index] = product;
+                }
+                showAlert('Product updated successfully!', 'success');
+            } else {
+                // Add new product
+                data.products.push(product);
+                showAlert('Product added successfully!', 'success');
+            }
+            
             saveData();
             populateProductsTable();
             populateProductDropdown();
             closeModal('productModal');
             document.getElementById('productForm').reset();
-            showAlert('Product added successfully!', 'success');
+            delete form.dataset.editId;
+            document.querySelector('#productModal .modal-title').textContent = 'Add Product';
+        }
+
+        function handleCollectionSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const editId = form.dataset.editId;
+            
+            const collection = {
+                id: editId || generateId(),
+                name: document.getElementById('collectionName').value,
+                description: document.getElementById('collectionDescription').value || ''
+            };
+            
+            if (editId) {
+                // Update existing collection
+                const index = data.collections.findIndex(c => c.id === editId);
+                if (index !== -1) {
+                    data.collections[index] = collection;
+                }
+                showAlert('Collection updated successfully!', 'success');
+            } else {
+                // Add new collection
+                data.collections.push(collection);
+                showAlert('Collection added successfully!', 'success');
+            }
+            
+            saveData();
+            populateCollectionsTable();
+            populateCollectionDropdown();
+            populateProductsTable(); // Refresh to show updated collection names
+            closeModal('collectionModal');
+            document.getElementById('collectionForm').reset();
+            delete form.dataset.editId;
+            document.querySelector('#collectionModal .modal-title').textContent = 'Add Collection';
+        }
+
+        function populateCollectionDropdown() {
+            const select = document.getElementById('productCollection');
+            select.innerHTML = '<option value="">No Collection</option>';
+            data.collections.forEach(collection => {
+                const option = document.createElement('option');
+                option.value = collection.id;
+                option.textContent = collection.name;
+                select.appendChild(option);
+            });
         }
 
         function handlePricingSubmit(e) {
@@ -3026,59 +3224,84 @@
         }
 
         async function syncToFirebase() {
-            if (!isFirebaseConnected || !db) {
-                console.log('Firebase not connected - skipping sync');
+            if (!isFirebaseConnected || !database) {
+                console.log('🚫 Firebase not connected - skipping sync');
                 return;
             }
             
             // Check if user is authenticated
             if (!firebaseUser) {
-                console.log('User not authenticated - skipping Firebase sync');
+                console.log('🚫 User not authenticated - skipping Firebase sync');
                 return;
             }
             
             try {
-                console.log('Starting Firebase sync for user:', firebaseUser.uid);
+                console.log('🔄 Starting Firebase Realtime Database sync for user:', firebaseUser.uid);
                 
-                // Sync each collection
+                // Sync each collection to Realtime Database
                 const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
+                let totalSynced = 0;
                 
                 for (const collectionName of collections) {
-                    console.log(`Syncing ${collectionName} collection...`);
+                    console.log(`📦 Syncing ${collectionName} collection (${data[collectionName].length} items)...`);
                     
-                    // Use individual document operations instead of batch for better error handling
-                    for (const item of data[collectionName]) {
-                        try {
-                            const docRef = db.collection(collectionName).doc(item.id);
-                            const docData = {
-                                ...item,
-                                lastModified: firebase.firestore.FieldValue.serverTimestamp(),
-                                syncedAt: new Date().toISOString(),
-                                userId: firebaseUser.uid // Track which user created/modified this
-                            };
-                            
-                            await docRef.set(docData, { merge: true });
-                            console.log(`Synced ${collectionName}/${item.id}`);
-                            
-                        } catch (docError) {
-                            console.error(`Error syncing ${collectionName} document ${item.id}:`, docError);
-                            
-                            // If it's a permission error, show user-friendly message
-                            if (docError.code === 'permission-denied') {
-                                showAlert(`Permission denied - please check Firebase rules`, 'error');
-                            }
+                    if (!data[collectionName] || data[collectionName].length === 0) {
+                        console.log(`⚠️ No data to sync for ${collectionName}`);
+                        // Still set empty object to clear any existing data
+                        await database.ref(`users/${firebaseUser.uid}/${collectionName}`).set({});
+                        continue;
+                    }
+                    
+                    // Convert array to object with IDs as keys for Realtime Database
+                    const dataObject = {};
+                    data[collectionName].forEach(item => {
+                        dataObject[item.id] = {
+                            ...item,
+                            lastModified: firebase.database.ServerValue.TIMESTAMP,
+                            syncedAt: new Date().toISOString(),
+                            userId: firebaseUser.uid
+                        };
+                    });
+                    
+                    try {
+                        // Set the entire collection at once for better performance
+                        await database.ref(`users/${firebaseUser.uid}/${collectionName}`).set(dataObject);
+                        console.log(`✅ Synced ${collectionName} collection (${data[collectionName].length} items)`);
+                        totalSynced += data[collectionName].length;
+                        
+                    } catch (collectionError) {
+                        console.error(`❌ Error syncing ${collectionName} collection:`, collectionError);
+                        
+                        if (collectionError.code === 'PERMISSION_DENIED') {
+                            console.error('🚫 Permission denied - Firebase rules may be blocking access');
+                            showAlert(`Permission denied for ${collectionName} - check Firebase rules`, 'error');
+                        } else if (collectionError.code === 'UNAUTHENTICATED') {
+                            console.error('🔐 User not authenticated properly');
+                            showAlert('Authentication error - please login again', 'error');
                         }
                     }
                 }
                 
-                console.log('Data synced to Firebase successfully');
-                showAlert('Data synced to Firebase! 🔥', 'success');
+                // Also sync metadata
+                await database.ref(`users/${firebaseUser.uid}/metadata`).set({
+                    lastSync: firebase.database.ServerValue.TIMESTAMP,
+                    syncedAt: new Date().toISOString(),
+                    totalItems: totalSynced,
+                    collections: collections.length
+                });
+                
+                console.log(`🎉 Firebase Realtime Database sync completed! ${totalSynced} items synced`);
+                if (totalSynced > 0) {
+                    showAlert(`Data synced to Firebase Realtime DB! ${totalSynced} items 🔥`, 'success');
+                }
                 
             } catch (error) {
-                console.error('Error syncing to Firebase:', error);
+                console.error('❌ Error syncing to Firebase Realtime Database:', error);
                 
-                if (error.code === 'permission-denied') {
+                if (error.code === 'PERMISSION_DENIED') {
                     showAlert('Firebase permission denied - check authentication', 'error');
+                } else if (error.code === 'UNAUTHENTICATED') {
+                    showAlert('Authentication error - please login again', 'error');
                 } else {
                     showAlert('Sync error - data saved locally', 'error');
                 }
@@ -3086,49 +3309,66 @@
         }
 
         async function loadFromFirebase() {
-            if (!isFirebaseConnected || !db) {
-                console.log('Firebase not connected - loading from local storage');
+            if (!isFirebaseConnected || !database) {
+                console.log('🚫 Firebase not connected - loading from local storage');
                 loadFromLocalStorage();
                 return;
             }
             
             // Check if user is authenticated
             if (!firebaseUser) {
-                console.log('User not authenticated - loading from local storage');
+                console.log('🚫 User not authenticated - loading from local storage');
                 loadFromLocalStorage();
                 return;
             }
             
             try {
-                console.log('Loading data from Firebase for user:', firebaseUser.uid);
+                console.log('📥 Loading data from Firebase Realtime Database for user:', firebaseUser.uid);
                 
                 const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
                 let hasData = false;
+                let totalLoaded = 0;
+                
+                // Initialize all collections first
+                collections.forEach(collectionName => {
+                    if (!data[collectionName]) {
+                        data[collectionName] = [];
+                    }
+                });
                 
                 for (const collectionName of collections) {
                     try {
-                        console.log(`Loading ${collectionName} collection...`);
-                        const snapshot = await db.collection(collectionName).get();
+                        console.log(`📦 Loading ${collectionName} collection...`);
+                        const snapshot = await database.ref(`users/${firebaseUser.uid}/${collectionName}`).once('value');
+                        const collectionData = snapshot.val();
+                        
                         data[collectionName] = [];
                         
-                        snapshot.forEach(doc => {
-                            const docData = doc.data();
-                            // Clean up Firebase metadata
-                            delete docData.lastModified;
-                            delete docData.modifiedBy;
-                            delete docData.syncedAt;
-                            delete docData.userId;
-                            data[collectionName].push(docData);
-                            hasData = true;
-                        });
+                        if (collectionData) {
+                            // Convert object back to array
+                            Object.keys(collectionData).forEach(key => {
+                                const item = collectionData[key];
+                                // Clean up Firebase metadata
+                                delete item.lastModified;
+                                delete item.syncedAt;
+                                delete item.userId;
+                                data[collectionName].push(item);
+                                hasData = true;
+                                totalLoaded++;
+                            });
+                        }
                         
-                        console.log(`Loaded ${data[collectionName].length} items from ${collectionName}`);
+                        console.log(`✅ Loaded ${data[collectionName].length} items from ${collectionName}`);
                         
                     } catch (collectionError) {
-                        console.error(`Error loading ${collectionName} from Firebase:`, collectionError);
+                        console.error(`❌ Error loading ${collectionName} from Firebase:`, collectionError);
                         
-                        if (collectionError.code === 'permission-denied') {
-                            console.log(`Permission denied for ${collectionName} - user may not be authenticated properly`);
+                        if (collectionError.code === 'PERMISSION_DENIED') {
+                            console.log(`🚫 Permission denied for ${collectionName} - user may not be authenticated properly`);
+                            showAlert(`Permission denied for ${collectionName}`, 'error');
+                        } else if (collectionError.code === 'UNAUTHENTICATED') {
+                            console.log(`🔐 User not authenticated for ${collectionName}`);
+                            showAlert('Authentication error - please login again', 'error');
                         }
                         
                         // Initialize empty array if collection doesn't exist or has permission issues
@@ -3141,16 +3381,24 @@
                 // Save to localStorage as backup
                 localStorage.setItem('salesData', JSON.stringify(data));
                 
-                if (hasData) {
-                    console.log('Data loaded from Firebase successfully');
-                    showAlert('Data loaded from Firebase! 🔥', 'success');
+                if (hasData && totalLoaded > 0) {
+                    console.log(`🎉 Data loaded from Firebase Realtime Database successfully! ${totalLoaded} items loaded`);
+                    showAlert(`Data loaded from Firebase Realtime DB! ${totalLoaded} items 🔥`, 'success');
                 } else {
-                    console.log('No data found in Firebase - using local/sample data');
+                    console.log('⚠️ No data found in Firebase - loading sample data');
+                    
+                    // Load from local storage first
                     loadFromLocalStorage();
-                    // If no data exists, load sample data and sync it
+                    
+                    // If still no data exists, load sample data and sync it
                     if (data.employees.length === 0) {
+                        console.log('📦 Loading sample data...');
                         loadSampleData();
-                        await syncToFirebase();
+                        
+                        // Wait a moment then sync to Firebase
+                        setTimeout(async () => {
+                            await syncToFirebase();
+                        }, 2000);
                     }
                 }
                 
@@ -3164,10 +3412,12 @@
                 }
                 
             } catch (error) {
-                console.error('Error loading from Firebase:', error);
+                console.error('❌ Error loading from Firebase Realtime Database:', error);
                 
-                if (error.code === 'permission-denied') {
+                if (error.code === 'PERMISSION_DENIED') {
                     showAlert('Firebase permission denied - using local data', 'error');
+                } else if (error.code === 'UNAUTHENTICATED') {
+                    showAlert('Authentication error - using local data', 'error');
                 }
                 
                 loadFromLocalStorage();
@@ -3175,7 +3425,7 @@
         }
 
         function setupRealtimeListeners() {
-            if (!isFirebaseConnected || !db || !firebaseUser) {
+            if (!isFirebaseConnected || !database || !firebaseUser) {
                 console.log('Cannot setup real-time listeners - Firebase not connected or user not authenticated');
                 return;
             }
@@ -3185,18 +3435,25 @@
             const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
             
             collections.forEach(collectionName => {
-                const unsubscribe = db.collection(collectionName).onSnapshot(
+                const ref = database.ref(`users/${firebaseUser.uid}/${collectionName}`);
+                
+                const listener = ref.on('value', 
                     (snapshot) => {
                         console.log(`Real-time update received for ${collectionName}`);
+                        const collectionData = snapshot.val();
                         data[collectionName] = [];
-                        snapshot.forEach(doc => {
-                            const docData = doc.data();
-                            delete docData.lastModified;
-                            delete docData.modifiedBy;
-                            delete docData.syncedAt;
-                            delete docData.userId;
-                            data[collectionName].push(docData);
-                        });
+                        
+                        if (collectionData) {
+                            // Convert object back to array
+                            Object.keys(collectionData).forEach(key => {
+                                const item = collectionData[key];
+                                // Clean up Firebase metadata
+                                delete item.lastModified;
+                                delete item.syncedAt;
+                                delete item.userId;
+                                data[collectionName].push(item);
+                            });
+                        }
                         
                         // Save to localStorage
                         localStorage.setItem('salesData', JSON.stringify(data));
@@ -3215,14 +3472,15 @@
                     (error) => {
                         console.error(`Error listening to ${collectionName}:`, error);
                         
-                        if (error.code === 'permission-denied') {
+                        if (error.code === 'PERMISSION_DENIED') {
                             console.log(`Permission denied for real-time updates on ${collectionName}`);
                             showAlert('Real-time sync disabled - permission denied', 'error');
                         }
                     }
                 );
                 
-                unsubscribeListeners.push(unsubscribe);
+                // Store reference to listener for cleanup
+                unsubscribeListeners.push(() => ref.off('value', listener));
             });
             
             console.log('Real-time listeners setup complete');
@@ -3234,8 +3492,10 @@
             populateEmployeesTable();
             populateStoresTable();
             populateProductsTable();
+            populateCollectionsTable();
             populatePricingTable();
             populatePricingDropdowns();
+            populateCollectionDropdown();
         }
 
         function updateEmployeeData() {
@@ -3375,26 +3635,22 @@
                     firebase.initializeApp(firebaseConfig);
                 }
                 
-                // Initialize Firestore and Auth
-                db = firebase.firestore();
+                // Initialize Realtime Database and Auth
+                database = firebase.database();
                 auth = firebase.auth();
                 
-                // Enable offline persistence
+                // Test database connection
                 try {
-                    await db.enablePersistence();
-                    console.log('Firebase offline persistence enabled');
+                    await database.ref('.info/connected').once('value');
+                    console.log('Firebase Realtime Database connection test successful');
                 } catch (err) {
-                    if (err.code === 'failed-precondition') {
-                        console.log('Multiple tabs open, persistence can only be enabled in one tab at a time');
-                    } else if (err.code === 'unimplemented') {
-                        console.log('The current browser does not support persistence');
-                    }
+                    console.log('Firebase Realtime Database connection test failed:', err);
                 }
                 
                 isFirebaseConnected = true;
                 updateConnectionStatus();
                 
-                console.log('Firebase initialized successfully with hardcoded config');
+                console.log('Firebase Realtime Database initialized successfully with hardcoded config');
                 return true;
                 
             } catch (error) {
@@ -3415,5 +3671,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bcbefc0741f9d7',t:'MTc1NDYzMjMyOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bcd05bb15fd1f0',t:'MTc1NDYzMzA0MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
