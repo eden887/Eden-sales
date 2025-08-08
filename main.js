@@ -1,20 +1,1419 @@
-// main.js
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Management Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-document.addEventListener("DOMContentLoaded", function () {
-  console.log("main.js loaded successfully!");
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            min-height: 100vh;
+            color: #f8f9fa;
+            font-weight: 300;
+            letter-spacing: 0.3px;
+        }
 
-  // Example: Add a click handler to a button with id="submitBtn"
-  const submitBtn = document.getElementById("submitBtn");
-  if (submitBtn) {
-    submitBtn.addEventListener("click", function () {
-      alert("Submit button clicked!");
-    });
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+            padding: 32px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        }
+
+        .login-container {
+            max-width: 400px;
+            margin: 50px auto;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 3.2rem;
+            color: #f8f9fa;
+            margin-bottom: 16px;
+            font-weight: 100;
+            letter-spacing: 3px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #f8f9fa, rgba(139, 134, 128, 0.8));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .firebase-connected {
+            background: transparent;
+            color: #f8f9fa;
+        }
+
+        .local-storage {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .security-warning {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.2), rgba(220, 38, 38, 0.1));
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: #fca5a5;
+        }
+
+        .security-warning h4 {
+            color: #f87171;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .security-rules {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 400;
+            color: rgba(248, 249, 250, 0.9);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            font-size: 16px;
+            color: #f8f9fa;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 300;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: rgba(139, 134, 128, 0.6);
+            background: rgba(255,255,255,0.12);
+            box-shadow: 0 0 0 3px rgba(139, 134, 128, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-control::placeholder {
+            color: rgba(248, 249, 250, 0.5);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #8B8680, #6B645F);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 15px rgba(139, 134, 128, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6B645F, #5A544F);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(139, 134, 128, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #8B8680, #6B645F);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 15px rgba(139, 134, 128, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #6B645F, #5A544F);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(139, 134, 128, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #DC2626, #B91C1C);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #B91C1C, #991B1B);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #047857, #065F46);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(5, 150, 105, 0.4);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, rgba(139, 134, 128, 0.15), rgba(139, 134, 128, 0.05));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(139, 134, 128, 0.2);
+            border-radius: 20px;
+            padding: 32px 24px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(139, 134, 128, 0.6), transparent);
+        }
+
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 200;
+            color: #f8f9fa;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: -1px;
+        }
+
+        .stat-label {
+            color: rgba(248, 249, 250, 0.7);
+            font-size: 0.95rem;
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .tabs {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 6px;
+            margin-bottom: 32px;
+            overflow-x: auto;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .tab {
+            padding: 16px 28px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 400;
+            color: rgba(248, 249, 250, 0.7);
+            white-space: nowrap;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            position: relative;
+            letter-spacing: 0.3px;
+        }
+
+        .tab:hover {
+            color: rgba(248, 249, 250, 0.9);
+            background: rgba(255,255,255,0.08);
+        }
+
+        .tab.active {
+            color: #f8f9fa;
+            background: linear-gradient(135deg, rgba(139, 134, 128, 0.3), rgba(139, 134, 128, 0.2));
+            box-shadow: 0 4px 12px rgba(139, 134, 128, 0.2);
+            font-weight: 500;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .table th,
+        .table td {
+            padding: 18px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.3s ease;
+        }
+
+        .table th {
+            background: linear-gradient(135deg, rgba(139, 134, 128, 0.2), rgba(139, 134, 128, 0.1));
+            font-weight: 500;
+            color: #f8f9fa;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid rgba(139, 134, 128, 0.3);
+        }
+
+        .table td {
+            color: rgba(248, 249, 250, 0.9);
+            font-weight: 300;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(255,255,255,0.05);
+            transform: scale(1.01);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from { 
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #f8f9fa;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: rgba(248, 249, 250, 0.7);
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 12px 0;
+        }
+
+        .quantity-btn {
+            width: 48px;
+            height: 48px;
+            border: 1px solid rgba(139, 134, 128, 0.4);
+            background: linear-gradient(145deg, rgba(139, 134, 128, 0.1), rgba(139, 134, 128, 0.05));
+            color: #f8f9fa;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 300;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+        }
+
+        .quantity-btn:hover {
+            background: linear-gradient(145deg, rgba(139, 134, 128, 0.3), rgba(139, 134, 128, 0.2));
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(139, 134, 128, 0.2);
+        }
+
+        .quantity-display {
+            font-size: 1.4rem;
+            font-weight: 200;
+            min-width: 50px;
+            text-align: center;
+            color: #f8f9fa;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .total-display {
+            font-size: 1.8rem;
+            font-weight: 200;
+            color: #f8f9fa;
+            text-align: center;
+            margin: 24px 0;
+            padding: 24px;
+            background: linear-gradient(135deg, rgba(5, 150, 105, 0.2), rgba(5, 150, 105, 0.1));
+            border: 1px solid rgba(5, 150, 105, 0.3);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(5, 150, 105, 0.1), inset 0 1px 0 rgba(255,255,255,0.1);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 0.5px;
+        }
+
+        .sales-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .sale-item {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding: 16px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: #f9fafb;
+        }
+
+        .sale-info {
+            flex: 1;
+        }
+
+        .sale-product {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .sale-details {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .sale-amount {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #10b981;
+            margin-right: 12px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .sync-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 100;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                font-size: 12px;
+                padding: 4px;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            
+            .tab {
+                padding: 8px 12px;
+                font-size: 11px;
+                flex: 1;
+                min-width: 80px;
+                text-align: center;
+            }
+            
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+            }
+            
+            .card {
+                padding: 20px;
+                margin-bottom: 16px;
+            }
+            
+            .table {
+                font-size: 0.85rem;
+            }
+            
+            .table th,
+            .table td {
+                padding: 12px 8px;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .stat-card {
+                padding: 20px 16px;
+            }
+            
+            .stat-value {
+                font-size: 2.2rem;
+            }
+            
+            .form-control {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
+            
+            /* Mobile table scroll */
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .table-responsive table {
+                min-width: 600px;
+            }
+            
+            /* Compact admin cards for mobile */
+            .admin-mobile-card {
+                background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 12px;
+            }
+            
+            .admin-mobile-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 12px;
+                font-weight: 500;
+                color: #f8f9fa;
+            }
+            
+            .admin-mobile-content {
+                font-size: 0.9rem;
+                color: rgba(248, 249, 250, 0.8);
+                line-height: 1.4;
+            }
+            
+            .admin-mobile-actions {
+                margin-top: 12px;
+                display: flex;
+                gap: 8px;
+            }
+            
+            .admin-mobile-actions .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            /* Mobile date/time adjustments */
+            #currentDateTime {
+                font-size: 0.8rem !important;
+            }
+            
+            #currentDateTimeMain {
+                font-size: 0.8rem !important;
+                order: -1;
+                width: 100%;
+                margin-bottom: 8px;
+            }
+            
+            .card > div:first-child {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .card > div:first-child > div:last-child {
+                margin-top: 12px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sync Status Indicator -->
+    <div id="syncStatus" class="sync-status firebase-connected">
+        🔥 Firebase Connected
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="card">
+            <div class="logo">
+                <h1>🧴 EDEN</h1>
+                <div style="font-size: 1.2rem; color: rgba(248, 249, 250, 0.8); margin-bottom: 16px; font-weight: 300; letter-spacing: 1px;">
+                    Sales Management System
+                </div>
+                <div id="currentDateTime" style="font-size: 0.85rem; color: rgba(248, 249, 250, 0.7); margin-bottom: 16px; font-weight: 300; text-align: center;">
+                    📅 Loading...
+                </div>
+                <div id="dbStatus" class="status-indicator firebase-connected">
+                    🔥 Firebase Connected
+                </div>
+                <div style="font-size: 0.8rem; color: #6b7280; display: flex; align-items: center; gap: 8px; justify-content: center;">
+                    Last synced: <span id="lastSync">8/8/2025, 10:47:11 AM</span>
+                    <button id="monitorBtn" style="background: transparent; border: none; padding: 0; font-size: 1rem; cursor: pointer;" onclick="checkFirebaseStatus()">
+                        🟢
+                    </button>
+                </div>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    🔐 Login
+                </button>
+            </form>
+            
+
+            
+            <!-- Developer Credit on Login Page -->
+            <div style="text-align: center; padding: 20px; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-size: 0.85rem; color: rgba(248, 249, 250, 0.6); letter-spacing: 0.5px; margin-bottom: 10px;">
+                    SYSTEM DEVELOPED BY SUFAIJ
+                </div>
+                <div style="font-size: 0.75rem; color: rgba(248, 249, 250, 0.5); line-height: 1.5;">
+                    📞 Phone: +968 77411364<br>
+                    📧 Email: sufaijmk0@gmail.com
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="hidden">
+        <div class="container">
+            <!-- Header -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                    <div class="logo">
+                        <h1 style="font-size: 2.8rem; color: #f8f9fa; margin-bottom: 8px; font-weight: 100; letter-spacing: 3px; text-shadow: 0 4px 8px rgba(0,0,0,0.5); background: linear-gradient(135deg, #f8f9fa, rgba(139, 134, 128, 0.8)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">🧴 EDEN</h1>
+                        <div style="font-size: 0.9rem; color: rgba(248, 249, 250, 0.8); font-weight: 300; letter-spacing: 1px;">
+                            Sales Management System
+                        </div>
+                    </div>
+                    <div style="text-align: center; flex: 1;">
+                        <div id="currentDateTimeMain" style="font-size: 0.9rem; color: rgba(248, 249, 250, 0.7); font-weight: 300;">
+                            📅 Loading...
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 16px;">
+                        <span id="userWelcome" style="font-weight: 600; color: rgba(248, 249, 250, 0.9);"></span>
+                        <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Portal -->
+            <div id="employeePortal" class="hidden">
+                <!-- Dashboard Cards -->
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="todaySales">$0</div>
+                        <div class="stat-label">Today's Sales</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="bottlesSold">0</div>
+                        <div class="stat-label">Bottles Sold</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="currentSalary">$0</div>
+                        <div class="stat-label">Current Salary</div>
+                    </div>
+                </div>
+
+                <!-- Sale Entry Form -->
+                <div class="card">
+                    <h2>📝 New Sale</h2>
+                    <form id="saleForm">
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="saleStore">Store</label>
+                                <select id="saleStore" class="form-control" required>
+                                    <option value="">Select Store</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="saleProduct">Product</label>
+                                <select id="saleProduct" class="form-control" required>
+                                    <option value="">Select Product</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="saleDate">Sale Date</label>
+                            <input type="date" id="saleDate" class="form-control" required>
+                            <small style="color: rgba(248, 249, 250, 0.6); font-size: 0.8rem; margin-top: 4px; display: block;">
+                                📅 You can only enter sales for today or yesterday
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <div class="quantity-controls">
+                                <button type="button" class="quantity-btn" id="decreaseQty">-</button>
+                                <span class="quantity-display" id="quantity">1</span>
+                                <button type="button" class="quantity-btn" id="increaseQty">+</button>
+                            </div>
+                        </div>
+                        
+                        <div class="total-display" id="totalAmount">
+                            Total: $0.00
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success" style="width: 100%;">
+                            💰 Record Sale
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Today's Sales -->
+                <div class="card">
+                    <h2>📋 Today's Sales</h2>
+                    <div id="todaySalesList" class="sales-list">
+                        <!-- Sales will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div id="adminDashboard" class="hidden">
+                <div class="tabs">
+                    <button class="tab active" data-tab="employees">👥 Employees</button>
+                    <button class="tab" data-tab="stores">🏪 Stores</button>
+                    <button class="tab" data-tab="products">📦 Products</button>
+                    <button class="tab" data-tab="collections">📂 Collections</button>
+                    <button class="tab" data-tab="pricing">💰 Pricing</button>
+                    <button class="tab" data-tab="sales">📊 Sales</button>
+                    <button class="tab" data-tab="salary">💰 Salary</button>
+                    <button class="tab" data-tab="settings">⚙️ Settings</button>
+                </div>
+
+                <!-- Employees Tab -->
+                <div id="employees" class="tab-content active">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2>👥 Employees</h2>
+                            <button class="btn btn-primary" onclick="openModal('employeeModal')">
+                                ➕ Add Employee
+                            </button>
+                        </div>
+                        <!-- Desktop Table -->
+                        <div class="table-responsive" id="employeesTableDesktop">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Role</th>
+                                        <th class="salary-column">Salary Type</th>
+                                        <th class="salary-column">Amount</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employeesTable">
+                                    <!-- Employees will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Mobile Cards -->
+                        <div id="employeesMobile" class="hidden">
+                            <!-- Mobile cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stores Tab -->
+                <div id="stores" class="tab-content">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2>🏪 Stores</h2>
+                            <button class="btn btn-primary" onclick="openModal('storeModal')">
+                                ➕ Add Store
+                            </button>
+                        </div>
+                        <!-- Desktop Table -->
+                        <div class="table-responsive" id="storesTableDesktop">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Location</th>
+                                        <th>Manager</th>
+                                        <th>Phone</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="storesTable">
+                                    <!-- Stores will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Mobile Cards -->
+                        <div id="storesMobile" class="hidden">
+                            <!-- Mobile cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products Tab -->
+                <div id="products" class="tab-content">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2>📦 Products</h2>
+                            <button class="btn btn-primary" onclick="openModal('productModal')">
+                                ➕ Add Product
+                            </button>
+                        </div>
+                        <!-- Desktop Table -->
+                        <div class="table-responsive" id="productsTableDesktop">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Price</th>
+                                        <th>Collection</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTable">
+                                    <!-- Products will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Mobile Cards -->
+                        <div id="productsMobile" class="hidden">
+                            <!-- Mobile cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collections Tab -->
+                <div id="collections" class="tab-content">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2>📂 Collections</h2>
+                            <button class="btn btn-primary" onclick="openModal('collectionModal')">
+                                ➕ Add Collection
+                            </button>
+                        </div>
+                        <!-- Desktop Table -->
+                        <div class="table-responsive" id="collectionsTableDesktop">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Products Count</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="collectionsTable">
+                                    <!-- Collections will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Mobile Cards -->
+                        <div id="collectionsMobile" class="hidden">
+                            <!-- Mobile cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pricing Tab -->
+                <div id="pricing" class="tab-content">
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h2>💰 Store Pricing</h2>
+                            <button class="btn btn-primary" onclick="openModal('pricingModal')">
+                                ➕ Set Store Pricing
+                            </button>
+                        </div>
+                        <!-- Desktop Table -->
+                        <div class="table-responsive" id="pricingTableDesktop">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Store</th>
+                                        <th>Product</th>
+                                        <th>Base Price</th>
+                                        <th>Store Price</th>
+                                        <th>Difference</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pricingTable">
+                                    <!-- Pricing will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Mobile Cards -->
+                        <div id="pricingMobile" class="hidden">
+                            <!-- Mobile cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales Tab -->
+                <div id="sales" class="tab-content">
+                    <div class="card">
+                        <h2>📊 Sales Reports</h2>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="reportType">Report Type</label>
+                                <select id="reportType" class="form-control">
+                                    <option value="daily">Daily</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="store">Store-wise</option>
+                                    <option value="staff">Staff-wise</option>
+                                    <option value="product">Product-wise</option>
+                                    <option value="attendance">Attendance</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="reportStartDate">Start Date</label>
+                                <input type="date" id="reportStartDate" class="form-control">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="reportEndDate">End Date</label>
+                                <input type="date" id="reportEndDate" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <div style="display: flex; gap: 10px; align-items: end;">
+                                    <button class="btn btn-secondary" onclick="setDateRange('today')">Today</button>
+                                    <button class="btn btn-secondary" onclick="setDateRange('week')">This Week</button>
+                                    <button class="btn btn-secondary" onclick="setDateRange('month')">This Month</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin: 20px 0;">
+                            <button class="btn btn-primary" onclick="generateReport()">📈 Generate Report</button>
+                            <button class="btn btn-success" onclick="downloadExcel()">📊 Download Excel</button>
+                            <button class="btn btn-danger" onclick="downloadPDF()">📄 Download PDF</button>
+                            <button class="btn btn-secondary" onclick="printReport()">🖨️ Print</button>
+                        </div>
+                        <div id="salesReport">
+                            <!-- Report will be generated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Salary Tab -->
+                <div id="salary" class="tab-content">
+                    <div class="card">
+                        <h2>💰 Salary Reports</h2>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="salaryStartDate">Start Date</label>
+                                <input type="date" id="salaryStartDate" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="salaryEndDate">End Date</label>
+                                <input type="date" id="salaryEndDate" class="form-control">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="generateSalaryReport()">💰 Generate Salary Report</button>
+                        <div id="salaryReport">
+                            <!-- Salary report will be generated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div id="settings" class="tab-content">
+                    <div class="card">
+                        <h2>⚙️ System Settings</h2>
+                        
+                        <!-- Employee Portal Settings -->
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: #f8f9fa; margin-bottom: 16px; font-size: 1.2rem;">👥 Employee Portal Settings</h3>
+                            
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1rem;">
+                                    <input type="checkbox" id="showSaleEntryButtons" style="width: 20px; height: 20px; cursor: pointer;" checked>
+                                    <span>Show Sale Entry Page Buttons</span>
+                                </label>
+                                <small style="color: rgba(248, 249, 250, 0.6); font-size: 0.85rem; margin-top: 8px; display: block; margin-left: 32px;">
+                                    When enabled, employees can see quantity adjustment buttons (+/-) and the record sale button on the sales entry form.
+                                </small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1rem;">
+                                    <input type="checkbox" id="allowSaleEditing" style="width: 20px; height: 20px; cursor: pointer;" checked>
+                                    <span>Allow Sale Editing/Deletion</span>
+                                </label>
+                                <small style="color: rgba(248, 249, 250, 0.6); font-size: 0.85rem; margin-top: 8px; display: block; margin-left: 32px;">
+                                    When enabled, employees can delete their own sales entries from today's sales list.
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Display Settings -->
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: #f8f9fa; margin-bottom: 16px; font-size: 1.2rem;">🎨 Display Settings</h3>
+                            
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1rem;">
+                                    <input type="checkbox" id="showDateTime" style="width: 20px; height: 20px; cursor: pointer;" checked>
+                                    <span>Show Date & Time Display</span>
+                                </label>
+                                <small style="color: rgba(248, 249, 250, 0.6); font-size: 0.85rem; margin-top: 8px; display: block; margin-left: 32px;">
+                                    Controls the visibility of the current date and time display on all pages.
+                                </small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 1rem;">
+                                    <input type="checkbox" id="showSalaryInfo" style="width: 20px; height: 20px; cursor: pointer;" checked>
+                                    <span>Show Salary Information</span>
+                                </label>
+                                <small style="color: rgba(248, 249, 250, 0.6); font-size: 0.85rem; margin-top: 8px; display: block; margin-left: 32px;">
+                                    Controls whether employees can see salary information in their dashboard and whether salary columns appear in admin tables.
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Save Settings -->
+                        <div style="padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                            <button class="btn btn-success" onclick="saveSettings()" style="margin-right: 12px;">
+                                💾 Save Settings
+                            </button>
+                            <button class="btn btn-secondary" onclick="resetSettings()">
+                                🔄 Reset to Defaults
+                            </button>
+                        </div>
+                        
+                        <!-- Settings Status -->
+                        <div id="settingsStatus" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;">
+                            <!-- Status messages will appear here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Developer Credit -->
+        <div style="text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 0.9rem; color: rgba(248, 249, 250, 0.6); letter-spacing: 0.5px; margin-bottom: 12px;">
+                SYSTEM DEVELOPED BY SUFAIJ
+            </div>
+            <div style="font-size: 0.8rem; color: rgba(248, 249, 250, 0.5); line-height: 1.6;">
+                📞 Phone: +968 77411364<br>
+                📧 Email: sufaijmk0@gmail.com
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Employee Modal -->
+    <div id="employeeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Employee</h3>
+                <button class="close-btn" onclick="closeModal('employeeModal')">&times;</button>
+            </div>
+            <form id="employeeForm">
+                <div class="form-group">
+                    <label for="empName">Name</label>
+                    <input type="text" id="empName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="empUsername">Username</label>
+                    <input type="text" id="empUsername" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="empPassword">Password</label>
+                    <input type="password" id="empPassword" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="empRole">Role</label>
+                    <select id="empRole" class="form-control" required>
+                        <option value="employee">Employee</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="empSalaryType">Salary Type</label>
+                    <select id="empSalaryType" class="form-control" required>
+                        <option value="fixed">Fixed</option>
+                        <option value="commission">Commission</option>
+                        <option value="hourly">Hourly</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="empSalaryAmount">Amount</label>
+                    <input type="number" id="empSalaryAmount" class="form-control" step="0.01" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Employee</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Store Modal -->
+    <div id="storeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Store</h3>
+                <button class="close-btn" onclick="closeModal('storeModal')">&times;</button>
+            </div>
+            <form id="storeForm">
+                <div class="form-group">
+                    <label for="storeName">Store Name</label>
+                    <input type="text" id="storeName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="storeLocation">Location</label>
+                    <input type="text" id="storeLocation" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="storeManager">Manager</label>
+                    <input type="text" id="storeManager" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="storePhone">Phone</label>
+                    <input type="tel" id="storePhone" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Store</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Product</h3>
+                <button class="close-btn" onclick="closeModal('productModal')">&times;</button>
+            </div>
+            <form id="productForm">
+                <div class="form-group">
+                    <label for="productName">Product Name</label>
+                    <input type="text" id="productName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="productPrice">Price</label>
+                    <input type="number" id="productPrice" class="form-control" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label for="productCollection">Collection</label>
+                    <select id="productCollection" class="form-control">
+                        <option value="">No Collection</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Product</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Collection Modal -->
+    <div id="collectionModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add Collection</h3>
+                <button class="close-btn" onclick="closeModal('collectionModal')">&times;</button>
+            </div>
+            <form id="collectionForm">
+                <div class="form-group">
+                    <label for="collectionName">Collection Name</label>
+                    <input type="text" id="collectionName" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="collectionDescription">Description</label>
+                    <textarea id="collectionDescription" class="form-control" rows="3" placeholder="Optional description"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Collection</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pricing Modal -->
+    <div id="pricingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Set Store Pricing</h3>
+                <button class="close-btn" onclick="closeModal('pricingModal')">&times;</button>
+            </div>
+            <form id="pricingForm">
+                <div class="form-group">
+                    <label for="pricingStore">Store</label>
+                    <select id="pricingStore" class="form-control" required onchange="showBasePrice()">
+                        <option value="">Select Store</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="pricingProduct">Product</label>
+                    <select id="pricingProduct" class="form-control" required onchange="showBasePrice()">
+                        <option value="">Select Product</option>
+                    </select>
+                </div>
+                <div class="form-group" id="basePrice" style="display: none;">
+                    <label>Base Price</label>
+                    <input type="text" id="basePriceDisplay" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="storePrice">Store Price ($)</label>
+                    <input type="number" id="storePrice" class="form-control" step="0.01" required placeholder="Enter price for this store">
+                </div>
+                <button type="submit" class="btn btn-primary">Save Pricing</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase Security Rules Information -->
+    <div id="firebaseRulesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🔥 Firebase Firestore Rules Setup</h3>
+                <button class="close-btn" onclick="closeModal('firebaseRulesModal')">&times;</button>
+            </div>
+            <div style="max-height: 70vh; overflow-y: auto;">
+                <div class="security-warning">
+                    <h4>🚨 Firestore Rules Required</h4>
+                    <p>Your Firebase Firestore database needs proper security rules with authentication to work with this application.</p>
+                </div>
+                
+                <h4 style="color: #f8f9fa; margin: 20px 0 10px 0;">📋 Step-by-Step Setup:</h4>
+                <ol style="color: rgba(248, 249, 250, 0.9); line-height: 1.6; padding-left: 20px;">
+                    <li>Go to <strong>Firebase Console</strong> → Your Project</li>
+                    <li>Navigate to <strong>Firestore Database</strong> → <strong>Rules</strong></li>
+                    <li>Replace the existing rules with the code below</li>
+                    <li>Click <strong>Publish</strong> to save the rules</li>
+                    <li>Refresh this page and try connecting again</li>
+                </ol>
+                
+                <h4 style="color: #f8f9fa; margin: 20px 0 10px 0;">🔒 Required Firestore Rules:</h4>
+                <div class="security-rules">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to access their own data
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow connection testing
+    match /connection_test/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
-});
+}</div>
+                
+                <div style="background: rgba(5, 150, 105, 0.2); border: 1px solid rgba(5, 150, 105, 0.3); border-radius: 8px; padding: 16px; margin: 20px 0;">
+                    <h4 style="color: #10b981; margin-bottom: 8px;">✅ What These Rules Do:</h4>
+                    <ul style="color: rgba(248, 249, 250, 0.9); line-height: 1.5; margin: 0; padding-left: 20px;">
+                        <li><strong>Security:</strong> Only allows access to user-specific data</li>
+                        <li><strong>Performance:</strong> Adds database indexes for faster queries</li>
+                        <li><strong>Testing:</strong> Allows connection testing</li>
+                        <li><strong>Organization:</strong> Keeps each user's data separate</li>
+                    </ul>
+                </div>
+                
+                <div style="background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 8px; padding: 16px; margin: 20px 0;">
+                    <h4 style="color: #f87171; margin-bottom: 8px;">⚠️ Important Notes:</h4>
+                    <ul style="color: rgba(248, 249, 250, 0.9); line-height: 1.5; margin: 0; padding-left: 20px;">
+                        <li>These rules allow read/write access for testing purposes</li>
+                        <li>For production use, implement proper authentication</li>
+                        <li>Each user's data is stored under their unique ID</li>
+                        <li>The system will work in local storage mode if Firebase fails</li>
+                    </ul>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="testFirebaseConnection()" style="margin-right: 10px;">
+                        🔄 Test Connection
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeModal('firebaseRulesModal')">
+                        📱 Use Local Storage Instead
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-// === App Logic from HTML ===
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-
+    <script>
         // Global variables
         let currentUser = null;
         let firebaseUser = null;
@@ -45,12 +1444,14 @@ document.addEventListener("DOMContentLoaded", function () {
         // 🔥 FIREBASE CONFIGURATION - REPLACE WITH YOUR ACTUAL PROJECT SETTINGS
         // Get these values from: Firebase Console → Project Settings → General → Your apps
         const firebaseConfig = {
-            apiKey: "AIzaSyAAKfNbkkckqOPQsgwF__jT0t2KGgbbh_0",                    // Replace with your actual API key
-            authDomain: "eden-sales-system-32521.firebaseapp.com",  // Replace YOUR_PROJECT_ID with your project ID
-            projectId: "eden-sales-system-32521",                   // Replace with your actual project ID
-            storageBucket: "eden-sales-system-32521.appspot.com",   // Replace YOUR_PROJECT_ID with your project ID
-            messagingSenderId: "13175034434",  // Replace with your actual sender ID
-            appId: "1:13175034434:web:13f9e559006634712f53db"                           // Replace with your actual app ID
+            const firebaseConfig = {
+  apiKey: "AIzaSyAAKfNbkkckqOPQsgwF__jT0t2KGgbbh_0",
+  authDomain: "eden-sales-system-32521.firebaseapp.com",
+  projectId: "eden-sales-system-32521",
+  storageBucket: "eden-sales-c2ad1.appspot.com",
+  messagingSenderId: "13175034434",
+  appId: "1:13175034434:web:13f9e559006634712f53db",
+  measurementId: "G-5FD05PTD8C"
         };
 
         // 📋 QUICK SETUP GUIDE:
@@ -444,53 +1845,2055 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         async function handleLogin(e) {
-    e.preventDefault();
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-
-    console.log('🔐 Starting login process for:', username);
-
-    // We will not load/allow arbitrary saved employees, products, stores or sales.
-    // Ensure the minimal admin exists in data (fallback)
-    if (!data.employees || data.employees.length === 0) {
-        loadSampleData();
-    }
-
-    // Only accept the single admin user (hardcoded)
-    if (username === 'admin' && password === 'admin123') {
-        currentUser = data.employees.find(emp => emp.username === 'admin') || {
-            id: 'admin1',
-            name: 'Admin User',
-            username: 'admin',
-            password: 'admin123',
-            role: 'admin'
-        };
-
-        // Bypass Firebase-per-user collections (keep Firebase code but do not use per-user data)
-        firebaseUser = null;
-        isFirebaseConnected = false;
-        updateConnectionStatus();
-
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
-        document.getElementById('userWelcome').textContent = `Welcome, ${currentUser.name}`;
-
-        // Always open admin dashboard for the single user
-        document.getElementById('adminDashboard').classList.remove('hidden');
-        document.getElementById('employeePortal').classList.add('hidden');
-
-        // Populate admin UI with empty collections
-        loadAdminData();
-        console.log('👤 Admin logged in');
-    } else {
-        console.log('❌ Invalid admin credentials');
-        alert('Invalid username or password');
-    }
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            console.log('🔐 Starting login process for:', username);
+            
+            // Load data first (Firebase or local storage)
+            if (isFirebaseConnected && database) {
+                console.log('🔥 Loading data from Firebase...');
+                await loadFromFirebase();
+            } else {
+                console.log('💾 Loading data from local storage');
+                loadFromLocalStorage();
+            }
+            
+            // Find user in employees data
+            const user = data.employees.find(emp => emp.username === username && emp.password === password);
+            
+            if (user) {
+                currentUser = user;
+                console.log('👤 User found:', user.name, 'Role:', user.role);
                 
-data.stores = [];
-data.collections = [];
-data.products = [];
-data.pricing = [];
+                // Set a simple Firebase user identifier for data organization
+                if (isFirebaseConnected) {
+                    firebaseUser = { uid: `user_${user.id}` };
+                    console.log('🔥 Using Firebase with user ID:', firebaseUser.uid);
+                    setupRealtimeListeners();
+                }
+                
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('userWelcome').textContent = `Welcome, ${user.name}`;
+                
+                if (user.role === 'admin') {
+                    document.getElementById('adminDashboard').classList.remove('hidden');
+                    loadAdminData();
+                } else {
+                    document.getElementById('employeePortal').classList.remove('hidden');
+                    loadEmployeeData();
+                }
+            } else {
+                console.log('❌ User not found in employee data');
+                alert('Invalid username or password');
+            }
+        }
+
+        async function logout() {
+            // Clear user session
+            currentUser = null;
+            firebaseUser = null;
+            
+            // Clear real-time listeners
+            unsubscribeListeners.forEach(unsubscribe => unsubscribe());
+            unsubscribeListeners = [];
+            
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('employeePortal').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('loginForm').reset();
+            
+            console.log('👋 User logged out successfully');
+        }
+
+        function loadEmployeeData() {
+            // Load stores and products for dropdowns
+            populateStoreDropdown();
+            populateProductDropdown();
+            updateEmployeeDashboard();
+            loadTodaysSales();
+            
+            // Apply settings to employee portal
+            applySettings();
+        }
+
+        function loadAdminData() {
+            populateEmployeesTable();
+            populateStoresTable();
+            populateProductsTable();
+            populateCollectionsTable();
+            populatePricingTable();
+            populatePricingDropdowns();
+            populateCollectionDropdown();
+        }
+
+        function populateStoreDropdown() {
+            const select = document.getElementById('saleStore');
+            select.innerHTML = '<option value="">Select Store</option>';
+            data.stores.forEach(store => {
+                const option = document.createElement('option');
+                option.value = store.id;
+                option.textContent = store.name;
+                select.appendChild(option);
+            });
+        }
+
+        function populateProductDropdown() {
+            const select = document.getElementById('saleProduct');
+            const storeId = document.getElementById('saleStore').value;
+            select.innerHTML = '<option value="">Select Product</option>';
+            
+            data.products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                
+                // Always start with base price
+                let price = product.price;
+                let priceLabel = `${product.name} - $${price.toFixed(2)}`;
+                
+                // Only apply store pricing if it exists for this specific store-product combination
+                if (storeId) {
+                    const storePricing = data.pricing.find(p => p.storeId === storeId && p.productId === product.id);
+                    if (storePricing) {
+                        price = storePricing.storePrice;
+                        priceLabel = `${product.name} - $${price.toFixed(2)} (Store Price)`;
+                    }
+                }
+                
+                option.textContent = priceLabel;
+                option.dataset.price = price; // Store the actual price for calculations
+                option.dataset.basePrice = product.price; // Store base price for reference
+                select.appendChild(option);
+            });
+            
+            // Update total when products are repopulated
+            updateTotal();
+        }
+
+        function populatePricingDropdowns() {
+            // Populate store dropdown in pricing modal
+            const storeSelect = document.getElementById('pricingStore');
+            storeSelect.innerHTML = '<option value="">Select Store</option>';
+            data.stores.forEach(store => {
+                const option = document.createElement('option');
+                option.value = store.id;
+                option.textContent = store.name;
+                storeSelect.appendChild(option);
+            });
+            
+            // Populate product dropdown in pricing modal
+            const productSelect = document.getElementById('pricingProduct');
+            productSelect.innerHTML = '<option value="">Select Product</option>';
+            data.products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product.id;
+                option.textContent = `${product.name} (Base: $${product.price})`;
+                productSelect.appendChild(option);
+            });
+        }
+
+        function updateQuantity(change) {
+            const quantityElement = document.getElementById('quantity');
+            let quantity = parseInt(quantityElement.textContent) + change;
+            if (quantity < 1) quantity = 1;
+            quantityElement.textContent = quantity;
+            updateTotal();
+        }
+
+        function updateTotal() {
+            const productSelect = document.getElementById('saleProduct');
+            const storeSelect = document.getElementById('saleStore');
+            const quantity = parseInt(document.getElementById('quantity').textContent);
+            const totalElement = document.getElementById('totalAmount');
+            
+            if (productSelect.value && storeSelect.value) {
+                const selectedOption = productSelect.options[productSelect.selectedIndex];
+                if (selectedOption && selectedOption.dataset.price) {
+                    const price = parseFloat(selectedOption.dataset.price);
+                    const total = price * quantity;
+                    totalElement.textContent = `Total: $${total.toFixed(2)}`;
+                } else {
+                    // Fallback to original method
+                    const product = data.products.find(p => p.id === productSelect.value);
+                    if (product) {
+                        let price = product.price;
+                        const storePricing = data.pricing.find(p => p.storeId === storeSelect.value && p.productId === product.id);
+                        if (storePricing) {
+                            price = storePricing.storePrice;
+                        }
+                        
+                        const total = price * quantity;
+                        totalElement.textContent = `Total: $${total.toFixed(2)}`;
+                    }
+                }
+            } else {
+                totalElement.textContent = 'Total: $0.00';
+            }
+        }
+
+        function handleSaleSubmit(e) {
+            e.preventDefault();
+            const storeId = document.getElementById('saleStore').value;
+            const productId = document.getElementById('saleProduct').value;
+            const quantity = parseInt(document.getElementById('quantity').textContent);
+            const saleDate = document.getElementById('saleDate').value;
+            
+            const store = data.stores.find(s => s.id === storeId);
+            const product = data.products.find(p => p.id === productId);
+            
+            if (!store || !product) {
+                alert('Please select both store and product');
+                return;
+            }
+            
+            if (!saleDate) {
+                alert('Please select a sale date');
+                return;
+            }
+            
+            // Validate date is within allowed range
+            const selectedDate = new Date(saleDate);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            if (selectedDate < yesterday || selectedDate > today) {
+                alert('You can only enter sales for today or yesterday!');
+                return;
+            }
+            
+            // Determine the correct price to use
+            let price = product.price; // Always start with base price
+            let priceType = 'Base Price';
+            
+            // Check if there's a specific store pricing override
+            const storePricing = data.pricing.find(p => p.storeId === storeId && p.productId === productId);
+            if (storePricing) {
+                price = storePricing.storePrice;
+                priceType = 'Store Price';
+            }
+            
+            // Create sale with selected date
+            const saleDateTime = new Date(saleDate);
+            saleDateTime.setHours(new Date().getHours(), new Date().getMinutes(), new Date().getSeconds());
+            
+            const saleId = generateId();
+            const sale = {
+                id: saleId,
+                employeeId: currentUser.id,
+                employeeName: currentUser.name,
+                storeId: storeId,
+                storeName: store.name,
+                productId: productId,
+                productName: product.name,
+                quantity: quantity,
+                price: price,
+                priceType: priceType, // Track whether base or store price was used
+                basePrice: product.price, // Always store the base price for reference
+                total: price * quantity,
+                date: saleDateTime.toISOString(),
+                timestamp: saleDateTime.getTime(),
+                userId: firebaseUser ? firebaseUser.uid : null // Track Firebase user
+            };
+            
+            data.sales.push(sale);
+            saveData('sales', saleId, 'create'); // Track this specific change
+            
+            // Reset form
+            document.getElementById('saleForm').reset();
+            document.getElementById('quantity').textContent = '1';
+            setupDateValidation(); // Reset date validation
+            updateTotal();
+            
+            // Refresh displays
+            updateEmployeeDashboard();
+            loadTodaysSales();
+            
+            showAlert(`Sale recorded for ${saleDate} at ${priceType.toLowerCase()}!`, 'success');
+        }
+
+        function updateEmployeeDashboard() {
+            const today = new Date().toDateString();
+            const todaysSales = data.sales.filter(sale => 
+                new Date(sale.date).toDateString() === today && 
+                sale.employeeId === currentUser.id
+            );
+            
+            const totalSales = todaysSales.reduce((sum, sale) => sum + sale.total, 0);
+            const totalBottles = todaysSales.reduce((sum, sale) => sum + sale.quantity, 0);
+            
+            document.getElementById('todaySales').textContent = `$${totalSales.toFixed(2)}`;
+            document.getElementById('bottlesSold').textContent = totalBottles;
+            document.getElementById('currentSalary').textContent = `$${currentUser.salaryAmount || 0}`;
+            
+            // Apply salary visibility setting
+            const salaryCard = document.querySelector('.stat-card:nth-child(3)'); // Current Salary card
+            if (salaryCard) {
+                salaryCard.style.display = settings.showSalaryInfo ? 'block' : 'none';
+            }
+        }
+
+        function loadTodaysSales() {
+            const today = new Date().toDateString();
+            const todaysSales = data.sales.filter(sale => 
+                new Date(sale.date).toDateString() === today && 
+                sale.employeeId === currentUser.id
+            );
+            
+            const container = document.getElementById('todaySalesList');
+            container.innerHTML = '';
+            
+            if (todaysSales.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;">No sales recorded today</p>';
+                return;
+            }
+            
+            todaysSales.forEach(sale => {
+                const saleElement = document.createElement('div');
+                saleElement.className = 'sale-item';
+                
+                // Show price type indicator
+                const priceIndicator = sale.priceType === 'Store Price' ? 
+                    `<span style="color: #10b981; font-size: 0.8rem;">📍 Store Price</span>` : 
+                    `<span style="color: rgba(248, 249, 250, 0.6); font-size: 0.8rem;">💰 Base Price</span>`;
+                
+                saleElement.innerHTML = `
+                    <div class="sale-info">
+                        <div class="sale-product">${sale.productName}</div>
+                        <div class="sale-details">
+                            ${sale.storeName} • Qty: ${sale.quantity} • $${sale.price.toFixed(2)} each • ${new Date(sale.date).toLocaleTimeString()}
+                            <br>${priceIndicator}
+                        </div>
+                    </div>
+                    <div class="sale-amount">$${sale.total.toFixed(2)}</div>
+                    <button class="btn btn-danger" onclick="deleteSale('${sale.id}')" style="display: ${settings.allowSaleEditing ? 'inline-flex' : 'none'};">🗑️</button>
+                `;
+                container.appendChild(saleElement);
+            });
+        }
+
+        function deleteSale(saleId) {
+            if (confirm('Are you sure you want to delete this sale?')) {
+                data.sales = data.sales.filter(sale => sale.id !== saleId);
+                saveData('sales', saleId, 'delete'); // Track deletion
+                updateEmployeeDashboard();
+                loadTodaysSales();
+                showAlert('Sale deleted successfully!', 'success');
+            }
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function populateEmployeesTable() {
+            const tbody = document.getElementById('employeesTable');
+            const mobileContainer = document.getElementById('employeesMobile');
+            tbody.innerHTML = '';
+            mobileContainer.innerHTML = '';
+            
+            // Update salary column visibility
+            const salaryColumns = document.querySelectorAll('.salary-column');
+            salaryColumns.forEach(col => {
+                col.style.display = settings.showSalaryInfo ? 'table-cell' : 'none';
+            });
+            
+            data.employees.forEach(employee => {
+                // Desktop table row
+                const row = document.createElement('tr');
+                const salaryTypeCell = settings.showSalaryInfo ? `<td class="salary-column">${employee.salaryType || 'Fixed'}</td>` : '<td class="salary-column" style="display: none;"></td>';
+                const salaryAmountCell = settings.showSalaryInfo ? `<td class="salary-column">$${employee.salaryAmount || 0}</td>` : '<td class="salary-column" style="display: none;"></td>';
+                
+                row.innerHTML = `
+                    <td>${employee.name}</td>
+                    <td>${employee.role}</td>
+                    ${salaryTypeCell}
+                    ${salaryAmountCell}
+                    <td>
+                        <button class="btn btn-secondary" onclick="editEmployee('${employee.id}')">✏️</button>
+                        <button class="btn btn-danger" onclick="deleteEmployee('${employee.id}')">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+                
+                // Mobile card
+                const card = document.createElement('div');
+                card.className = 'admin-mobile-card';
+                const salaryInfo = settings.showSalaryInfo ? `<div>💰 Salary: ${employee.salaryType || 'Fixed'} - $${employee.salaryAmount || 0}</div>` : '';
+                
+                card.innerHTML = `
+                    <div class="admin-mobile-header">
+                        <span>👤 ${employee.name}</span>
+                        <span style="font-size: 0.8rem; color: rgba(248, 249, 250, 0.6);">${employee.role}</span>
+                    </div>
+                    <div class="admin-mobile-content">
+                        ${salaryInfo}
+                        <div>🔑 Username: ${employee.username}</div>
+                    </div>
+                    <div class="admin-mobile-actions">
+                        <button class="btn btn-secondary" onclick="editEmployee('${employee.id}')">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="deleteEmployee('${employee.id}')">🗑️ Delete</button>
+                    </div>
+                `;
+                mobileContainer.appendChild(card);
+            });
+        }
+
+        function populateStoresTable() {
+            const tbody = document.getElementById('storesTable');
+            const mobileContainer = document.getElementById('storesMobile');
+            tbody.innerHTML = '';
+            mobileContainer.innerHTML = '';
+            
+            data.stores.forEach(store => {
+                // Desktop table row
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${store.name}</td>
+                    <td>${store.location}</td>
+                    <td>${store.manager}</td>
+                    <td>${store.phone}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="editStore('${store.id}')">✏️</button>
+                        <button class="btn btn-danger" onclick="deleteStore('${store.id}')">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+                
+                // Mobile card
+                const card = document.createElement('div');
+                card.className = 'admin-mobile-card';
+                card.innerHTML = `
+                    <div class="admin-mobile-header">
+                        <span>🏪 ${store.name}</span>
+                        <span style="font-size: 0.8rem; color: rgba(248, 249, 250, 0.6);">${store.location}</span>
+                    </div>
+                    <div class="admin-mobile-content">
+                        <div>👨‍💼 Manager: ${store.manager}</div>
+                        <div>📞 Phone: ${store.phone}</div>
+                    </div>
+                    <div class="admin-mobile-actions">
+                        <button class="btn btn-secondary" onclick="editStore('${store.id}')">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="deleteStore('${store.id}')">🗑️ Delete</button>
+                    </div>
+                `;
+                mobileContainer.appendChild(card);
+            });
+        }
+
+        function populateProductsTable() {
+            const tbody = document.getElementById('productsTable');
+            const mobileContainer = document.getElementById('productsMobile');
+            tbody.innerHTML = '';
+            mobileContainer.innerHTML = '';
+            
+            data.products.forEach(product => {
+                // Find collection name
+                const collection = data.collections.find(c => c.id === product.collectionId);
+                const collectionName = collection ? collection.name : 'No Collection';
+                
+                // Desktop table row
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.name}</td>
+                    <td>$${product.price}</td>
+                    <td>${collectionName}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="editProduct('${product.id}')">✏️</button>
+                        <button class="btn btn-danger" onclick="deleteProduct('${product.id}')">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+                
+                // Mobile card
+                const card = document.createElement('div');
+                card.className = 'admin-mobile-card';
+                card.innerHTML = `
+                    <div class="admin-mobile-header">
+                        <span>📦 ${product.name}</span>
+                        <span style="font-size: 0.8rem; color: rgba(248, 249, 250, 0.6);">$${product.price}</span>
+                    </div>
+                    <div class="admin-mobile-content">
+                        <div>💰 Price: $${product.price}</div>
+                        <div>📂 Collection: ${collectionName}</div>
+                    </div>
+                    <div class="admin-mobile-actions">
+                        <button class="btn btn-secondary" onclick="editProduct('${product.id}')">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="deleteProduct('${product.id}')">🗑️ Delete</button>
+                    </div>
+                `;
+                mobileContainer.appendChild(card);
+            });
+        }
+
+        function populateCollectionsTable() {
+            const tbody = document.getElementById('collectionsTable');
+            const mobileContainer = document.getElementById('collectionsMobile');
+            tbody.innerHTML = '';
+            mobileContainer.innerHTML = '';
+            
+            data.collections.forEach(collection => {
+                // Count products in this collection
+                const productCount = data.products.filter(p => p.collectionId === collection.id).length;
+                
+                // Desktop table row
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${collection.name}</td>
+                    <td>${collection.description || 'No description'}</td>
+                    <td>${productCount} products</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="editCollection('${collection.id}')">✏️</button>
+                        <button class="btn btn-danger" onclick="deleteCollection('${collection.id}')">🗑️</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+                
+                // Mobile card
+                const card = document.createElement('div');
+                card.className = 'admin-mobile-card';
+                card.innerHTML = `
+                    <div class="admin-mobile-header">
+                        <span>📂 ${collection.name}</span>
+                        <span style="font-size: 0.8rem; color: rgba(248, 249, 250, 0.6);">${productCount} products</span>
+                    </div>
+                    <div class="admin-mobile-content">
+                        <div>📝 Description: ${collection.description || 'No description'}</div>
+                        <div>📦 Products: ${productCount}</div>
+                    </div>
+                    <div class="admin-mobile-actions">
+                        <button class="btn btn-secondary" onclick="editCollection('${collection.id}')">✏️ Edit</button>
+                        <button class="btn btn-danger" onclick="deleteCollection('${collection.id}')">🗑️ Delete</button>
+                    </div>
+                `;
+                mobileContainer.appendChild(card);
+            });
+        }
+
+        function populatePricingTable() {
+            const tbody = document.getElementById('pricingTable');
+            const mobileContainer = document.getElementById('pricingMobile');
+            tbody.innerHTML = '';
+            mobileContainer.innerHTML = '';
+            
+            // Create a comprehensive table showing all store-product combinations
+            data.stores.forEach(store => {
+                data.products.forEach(product => {
+                    // Find existing pricing for this store-product combination
+                    const existingPricing = data.pricing.find(p => p.storeId === store.id && p.productId === product.id);
+                    
+                    const storePrice = existingPricing ? existingPricing.storePrice : product.price;
+                    const difference = (storePrice - product.price).toFixed(2);
+                    const differenceDisplay = difference >= 0 ? `+$${difference}` : `-$${Math.abs(difference)}`;
+                    const isCustomPricing = existingPricing ? true : false;
+                    
+                    // Desktop table row
+                    const row = document.createElement('tr');
+                    row.style.backgroundColor = isCustomPricing ? 'rgba(139, 134, 128, 0.1)' : 'transparent';
+                    row.innerHTML = `
+                        <td>${store.name}</td>
+                        <td>${product.name}</td>
+                        <td>$${product.price.toFixed(2)}</td>
+                        <td style="font-weight: ${isCustomPricing ? 'bold' : 'normal'};">
+                            $${storePrice.toFixed(2)}
+                            ${!isCustomPricing ? '<span style="color: rgba(248, 249, 250, 0.5); font-size: 0.8rem;">(Base Price)</span>' : ''}
+                        </td>
+                        <td style="color: ${difference >= 0 ? '#10b981' : '#ef4444'};">${differenceDisplay}</td>
+                        <td>
+                            ${existingPricing ? 
+                                `<button class="btn btn-secondary" onclick="editPricing('${existingPricing.id}')">✏️</button>
+                                 <button class="btn btn-danger" onclick="deletePricing('${existingPricing.id}')">🗑️</button>` :
+                                `<button class="btn btn-primary" onclick="setPricing('${store.id}', '${product.id}')">💰 Set Price</button>`
+                            }
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                    
+                    // Mobile card
+                    const card = document.createElement('div');
+                    card.className = 'admin-mobile-card';
+                    if (isCustomPricing) {
+                        card.style.background = 'linear-gradient(145deg, rgba(139, 134, 128, 0.15), rgba(139, 134, 128, 0.08))';
+                        card.style.border = '1px solid rgba(139, 134, 128, 0.3)';
+                    }
+                    card.innerHTML = `
+                        <div class="admin-mobile-header">
+                            <span>🏪 ${store.name}</span>
+                            <span style="font-size: 0.8rem; color: ${difference >= 0 ? '#10b981' : '#ef4444'};">${differenceDisplay}</span>
+                        </div>
+                        <div class="admin-mobile-content">
+                            <div>📦 Product: ${product.name}</div>
+                            <div>💰 Base Price: $${product.price.toFixed(2)}</div>
+                            <div style="font-weight: ${isCustomPricing ? 'bold' : 'normal'};">
+                                🏷️ Store Price: $${storePrice.toFixed(2)}
+                                ${!isCustomPricing ? '<span style="color: rgba(248, 249, 250, 0.5); font-size: 0.8rem;"> (Base)</span>' : ' (Custom)'}
+                            </div>
+                        </div>
+                        <div class="admin-mobile-actions">
+                            ${existingPricing ? 
+                                `<button class="btn btn-secondary" onclick="editPricing('${existingPricing.id}')">✏️ Edit</button>
+                                 <button class="btn btn-danger" onclick="deletePricing('${existingPricing.id}')">🗑️ Delete</button>` :
+                                `<button class="btn btn-primary" onclick="setPricing('${store.id}', '${product.id}')">💰 Set Price</button>`
+                            }
+                        </div>
+                    `;
+                    mobileContainer.appendChild(card);
+                });
+            });
+            
+            // Add summary row if there are custom pricings
+            if (data.pricing.length > 0) {
+                const summaryRow = document.createElement('tr');
+                summaryRow.style.borderTop = '2px solid rgba(139, 134, 128, 0.3)';
+                summaryRow.style.fontWeight = 'bold';
+                summaryRow.innerHTML = `
+                    <td colspan="6" style="text-align: center; padding: 16px; color: rgba(248, 249, 250, 0.7);">
+                        📊 ${data.pricing.length} custom pricing rules active across ${data.stores.length} stores and ${data.products.length} products
+                    </td>
+                `;
+                tbody.appendChild(summaryRow);
+                
+                // Mobile summary card
+                const summaryCard = document.createElement('div');
+                summaryCard.className = 'admin-mobile-card';
+                summaryCard.style.background = 'linear-gradient(145deg, rgba(139, 134, 128, 0.2), rgba(139, 134, 128, 0.1))';
+                summaryCard.style.border = '2px solid rgba(139, 134, 128, 0.3)';
+                summaryCard.innerHTML = `
+                    <div class="admin-mobile-header">
+                        <span>📊 Pricing Summary</span>
+                    </div>
+                    <div class="admin-mobile-content" style="text-align: center; color: rgba(248, 249, 250, 0.8);">
+                        ${data.pricing.length} custom pricing rules active across ${data.stores.length} stores and ${data.products.length} products
+                    </div>
+                `;
+                mobileContainer.appendChild(summaryCard);
+            }
+        }
+
+        function handleEmployeeSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const editId = form.dataset.editId;
+            
+            const employeeId = editId || generateId();
+            const employee = {
+                id: employeeId,
+                name: document.getElementById('empName').value,
+                username: document.getElementById('empUsername').value,
+                password: document.getElementById('empPassword').value,
+                role: document.getElementById('empRole').value,
+                salaryType: document.getElementById('empSalaryType').value,
+                salaryAmount: parseFloat(document.getElementById('empSalaryAmount').value)
+            };
+            
+            if (editId) {
+                // Update existing employee
+                const index = data.employees.findIndex(emp => emp.id === editId);
+                if (index !== -1) {
+                    data.employees[index] = employee;
+                }
+                showAlert('Employee updated successfully!', 'success');
+                saveData('employees', employeeId, 'update');
+            } else {
+                // Add new employee
+                data.employees.push(employee);
+                showAlert('Employee added successfully!', 'success');
+                saveData('employees', employeeId, 'create');
+            }
+            populateEmployeesTable();
+            closeModal('employeeModal');
+            document.getElementById('employeeForm').reset();
+            delete form.dataset.editId;
+            document.querySelector('#employeeModal .modal-title').textContent = 'Add Employee';
+        }
+
+        function handleStoreSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const editId = form.dataset.editId;
+            
+            const store = {
+                id: editId || generateId(),
+                name: document.getElementById('storeName').value,
+                location: document.getElementById('storeLocation').value,
+                manager: document.getElementById('storeManager').value,
+                phone: document.getElementById('storePhone').value
+            };
+            
+            if (editId) {
+                // Update existing store
+                const index = data.stores.findIndex(s => s.id === editId);
+                if (index !== -1) {
+                    data.stores[index] = store;
+                }
+                showAlert('Store updated successfully!', 'success');
+                saveData('stores', store.id, 'update');
+            } else {
+                // Add new store
+                data.stores.push(store);
+                showAlert('Store added successfully!', 'success');
+                saveData('stores', store.id, 'create');
+            }
+            populateStoresTable();
+            populateStoreDropdown();
+            closeModal('storeModal');
+            document.getElementById('storeForm').reset();
+            delete form.dataset.editId;
+            document.querySelector('#storeModal .modal-title').textContent = 'Add Store';
+        }
+
+        function handleProductSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const editId = form.dataset.editId;
+            
+            const product = {
+                id: editId || generateId(),
+                name: document.getElementById('productName').value,
+                price: parseFloat(document.getElementById('productPrice').value),
+                collectionId: document.getElementById('productCollection').value || null
+            };
+            
+            if (editId) {
+                // Update existing product
+                const index = data.products.findIndex(p => p.id === editId);
+                if (index !== -1) {
+                    data.products[index] = product;
+                }
+                showAlert('Product updated successfully!', 'success');
+                saveData('products', product.id, 'update');
+            } else {
+                // Add new product
+                data.products.push(product);
+                showAlert('Product added successfully!', 'success');
+                saveData('products', product.id, 'create');
+            }
+            populateProductsTable();
+            populateProductDropdown();
+            closeModal('productModal');
+            document.getElementById('productForm').reset();
+            delete form.dataset.editId;
+            document.querySelector('#productModal .modal-title').textContent = 'Add Product';
+        }
+
+        function handleCollectionSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const editId = form.dataset.editId;
+            
+            const collection = {
+                id: editId || generateId(),
+                name: document.getElementById('collectionName').value,
+                description: document.getElementById('collectionDescription').value || ''
+            };
+            
+            if (editId) {
+                // Update existing collection
+                const index = data.collections.findIndex(c => c.id === editId);
+                if (index !== -1) {
+                    data.collections[index] = collection;
+                }
+                showAlert('Collection updated successfully!', 'success');
+                saveData('collections', collection.id, 'update');
+            } else {
+                // Add new collection
+                data.collections.push(collection);
+                showAlert('Collection added successfully!', 'success');
+                saveData('collections', collection.id, 'create');
+            }
+            populateCollectionsTable();
+            populateCollectionDropdown();
+            populateProductsTable(); // Refresh to show updated collection names
+            closeModal('collectionModal');
+            document.getElementById('collectionForm').reset();
+            delete form.dataset.editId;
+            document.querySelector('#collectionModal .modal-title').textContent = 'Add Collection';
+        }
+
+        function populateCollectionDropdown() {
+            const select = document.getElementById('productCollection');
+            select.innerHTML = '<option value="">No Collection</option>';
+            data.collections.forEach(collection => {
+                const option = document.createElement('option');
+                option.value = collection.id;
+                option.textContent = collection.name;
+                select.appendChild(option);
+            });
+        }
+
+        function handlePricingSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const editId = form.dataset.editId;
+            
+            const storeId = document.getElementById('pricingStore').value;
+            const productId = document.getElementById('pricingProduct').value;
+            const storePrice = parseFloat(document.getElementById('storePrice').value);
+            
+            const pricing = {
+                id: editId || generateId(),
+                storeId: storeId,
+                productId: productId,
+                storePrice: storePrice
+            };
+            
+            if (editId) {
+                // Update existing pricing
+                const index = data.pricing.findIndex(p => p.id === editId);
+                if (index !== -1) {
+                    data.pricing[index] = pricing;
+                }
+                showAlert('Pricing updated successfully!', 'success');
+                saveData('pricing', pricing.id, 'update');
+            } else {
+                // Check if pricing already exists for this store-product combination
+                const existingIndex = data.pricing.findIndex(p => p.storeId === storeId && p.productId === productId);
+                if (existingIndex !== -1) {
+                    data.pricing[existingIndex] = pricing;
+                    showAlert('Pricing updated successfully!', 'success');
+                    saveData('pricing', pricing.id, 'update');
+                } else {
+                    data.pricing.push(pricing);
+                    showAlert('Pricing added successfully!', 'success');
+                    saveData('pricing', pricing.id, 'create');
+                }
+            }
+            populatePricingTable();
+            populateProductDropdown(); // Refresh product dropdown with new prices
+            closeModal('pricingModal');
+            document.getElementById('pricingForm').reset();
+            document.getElementById('basePrice').style.display = 'none';
+            delete form.dataset.editId;
+            document.querySelector('#pricingModal .modal-title').textContent = 'Set Store Pricing';
+        }
+
+        function showBasePrice() {
+            const storeId = document.getElementById('pricingStore').value;
+            const productId = document.getElementById('pricingProduct').value;
+            const basePriceDiv = document.getElementById('basePrice');
+            const basePriceDisplay = document.getElementById('basePriceDisplay');
+            const storePriceInput = document.getElementById('storePrice');
+            
+            if (storeId && productId) {
+                const product = data.products.find(p => p.id === productId);
+                if (product) {
+                    basePriceDisplay.value = `$${product.price.toFixed(2)}`;
+                    basePriceDiv.style.display = 'block';
+                    
+                    // Check if pricing already exists for this combination
+                    const existingPricing = data.pricing.find(p => p.storeId === storeId && p.productId === productId);
+                    if (existingPricing) {
+                        storePriceInput.value = existingPricing.storePrice;
+                    } else {
+                        storePriceInput.value = product.price; // Default to base price
+                    }
+                }
+            } else {
+                basePriceDiv.style.display = 'none';
+                storePriceInput.value = '';
+            }
+        }
+
+        function generateReport() {
+            const reportType = document.getElementById('reportType').value;
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            const container = document.getElementById('salesReport');
+            
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+            
+            let filteredSales = [...data.sales];
+            
+            // Filter by date range
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999); // Include the entire end date
+            
+            filteredSales = filteredSales.filter(sale => {
+                const saleDate = new Date(sale.date);
+                return saleDate >= start && saleDate <= end;
+            });
+            
+            let reportHTML = `<div class="card"><h3>${getReportTitle(reportType)} Report</h3>`;
+            reportHTML += `<p style="color: rgba(248, 249, 250, 0.7); margin-bottom: 20px;">📅 ${startDate} to ${endDate}</p>`;
+            
+            switch (reportType) {
+                case 'daily':
+                    reportHTML += generateDailyReport(filteredSales);
+                    break;
+                case 'monthly':
+                    reportHTML += generateMonthlyReport(filteredSales);
+                    break;
+                case 'store':
+                    reportHTML += generateStoreReport(filteredSales);
+                    break;
+                case 'staff':
+                    reportHTML += generateStaffReport(filteredSales);
+                    break;
+                case 'product':
+                    reportHTML += generateProductReport(filteredSales);
+                    break;
+                case 'attendance':
+                    reportHTML += generateAttendanceReport(filteredSales, start, end);
+                    break;
+            }
+            
+            reportHTML += '</div>';
+            container.innerHTML = reportHTML;
+        }
+
+        function getReportTitle(reportType) {
+            const titles = {
+                'daily': 'Daily Sales',
+                'monthly': 'Monthly Sales',
+                'store': 'Store-wise Sales',
+                'staff': 'Staff-wise Sales',
+                'product': 'Product-wise Sales',
+                'attendance': 'Employee Attendance'
+            };
+            return titles[reportType] || 'Sales';
+        }
+
+        function generateAttendanceReport(sales, startDate, endDate) {
+            const attendanceData = {};
+            
+            // Initialize all employees
+            data.employees.forEach(employee => {
+                attendanceData[employee.name] = {
+                    id: employee.id,
+                    role: employee.role,
+                    daysPresent: new Set(),
+                    totalSales: 0,
+                    totalTransactions: 0
+                };
+            });
+            
+            // Mark attendance based on sales data
+            sales.forEach(sale => {
+                if (attendanceData[sale.employeeName]) {
+                    const saleDate = new Date(sale.date).toDateString();
+                    attendanceData[sale.employeeName].daysPresent.add(saleDate);
+                    attendanceData[sale.employeeName].totalSales += sale.total;
+                    attendanceData[sale.employeeName].totalTransactions += 1;
+                }
+            });
+            
+            // Calculate total working days in the period
+            const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            
+            return `
+                <div style="margin-bottom: 20px; padding: 16px; background: rgba(139, 134, 128, 0.1); border-radius: 8px;">
+                    <h4 style="color: #f8f9fa; margin-bottom: 8px;">📊 Attendance Summary</h4>
+                    <p style="color: rgba(248, 249, 250, 0.8); font-size: 0.9rem;">
+                        Total Period: ${totalDays} days | Attendance tracked by sales entries
+                    </p>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Role</th>
+                            <th>Days Present</th>
+                            <th>Attendance %</th>
+                            <th>Total Sales</th>
+                            <th>Transactions</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(attendanceData).map(([name, data]) => {
+                            const daysPresent = data.daysPresent.size;
+                            const attendancePercent = ((daysPresent / totalDays) * 100).toFixed(1);
+                            const status = daysPresent === 0 ? '❌ Absent' : 
+                                          attendancePercent >= 80 ? '✅ Good' : 
+                                          attendancePercent >= 60 ? '⚠️ Average' : '🔴 Poor';
+                            
+                            return `
+                                <tr>
+                                    <td>${name}</td>
+                                    <td>${data.role}</td>
+                                    <td>${daysPresent} / ${totalDays}</td>
+                                    <td>${attendancePercent}%</td>
+                                    <td>$${data.totalSales.toFixed(2)}</td>
+                                    <td>${data.totalTransactions}</td>
+                                    <td>${status}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function generateDailyReport(sales) {
+            const totalSales = sales.reduce((sum, sale) => sum + sale.total, 0);
+            const totalQuantity = sales.reduce((sum, sale) => sum + sale.quantity, 0);
+            
+            return `
+                <p><strong>Total Sales:</strong> $${totalSales.toFixed(2)}</p>
+                <p><strong>Total Items Sold:</strong> ${totalQuantity}</p>
+                <p><strong>Number of Transactions:</strong> ${sales.length}</p>
+                <table class="table">
+                    <thead>
+                        <tr><th>Time</th><th>Employee</th><th>Store</th><th>Product</th><th>Qty</th><th>Total</th></tr>
+                    </thead>
+                    <tbody>
+                        ${sales.map(sale => `
+                            <tr>
+                                <td>${new Date(sale.date).toLocaleTimeString()}</td>
+                                <td>${sale.employeeName}</td>
+                                <td>${sale.storeName}</td>
+                                <td>${sale.productName}</td>
+                                <td>${sale.quantity}</td>
+                                <td>$${sale.total.toFixed(2)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function generateStoreReport(sales) {
+            const storeStats = {};
+            sales.forEach(sale => {
+                if (!storeStats[sale.storeName]) {
+                    storeStats[sale.storeName] = { total: 0, quantity: 0, transactions: 0 };
+                }
+                storeStats[sale.storeName].total += sale.total;
+                storeStats[sale.storeName].quantity += sale.quantity;
+                storeStats[sale.storeName].transactions += 1;
+            });
+            
+            return `
+                <table class="table">
+                    <thead>
+                        <tr><th>Store</th><th>Total Sales</th><th>Items Sold</th><th>Transactions</th></tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(storeStats).map(([store, stats]) => `
+                            <tr>
+                                <td>${store}</td>
+                                <td>$${stats.total.toFixed(2)}</td>
+                                <td>${stats.quantity}</td>
+                                <td>${stats.transactions}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function generateStaffReport(sales) {
+            const staffStats = {};
+            sales.forEach(sale => {
+                if (!staffStats[sale.employeeName]) {
+                    staffStats[sale.employeeName] = { total: 0, quantity: 0, transactions: 0 };
+                }
+                staffStats[sale.employeeName].total += sale.total;
+                staffStats[sale.employeeName].quantity += sale.quantity;
+                staffStats[sale.employeeName].transactions += 1;
+            });
+            
+            return `
+                <table class="table">
+                    <thead>
+                        <tr><th>Employee</th><th>Total Sales</th><th>Items Sold</th><th>Transactions</th></tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(staffStats).map(([employee, stats]) => `
+                            <tr>
+                                <td>${employee}</td>
+                                <td>$${stats.total.toFixed(2)}</td>
+                                <td>${stats.quantity}</td>
+                                <td>${stats.transactions}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function generateProductReport(sales) {
+            const productStats = {};
+            sales.forEach(sale => {
+                if (!productStats[sale.productName]) {
+                    productStats[sale.productName] = { total: 0, quantity: 0, transactions: 0 };
+                }
+                productStats[sale.productName].total += sale.total;
+                productStats[sale.productName].quantity += sale.quantity;
+                productStats[sale.productName].transactions += 1;
+            });
+            
+            return `
+                <table class="table">
+                    <thead>
+                        <tr><th>Product</th><th>Total Sales</th><th>Quantity Sold</th><th>Transactions</th></tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(productStats).map(([product, stats]) => `
+                            <tr>
+                                <td>${product}</td>
+                                <td>$${stats.total.toFixed(2)}</td>
+                                <td>${stats.quantity}</td>
+                                <td>${stats.transactions}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function generateMonthlyReport(sales) {
+            // Group by month
+            const monthlyStats = {};
+            sales.forEach(sale => {
+                const month = new Date(sale.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+                if (!monthlyStats[month]) {
+                    monthlyStats[month] = { total: 0, quantity: 0, transactions: 0 };
+                }
+                monthlyStats[month].total += sale.total;
+                monthlyStats[month].quantity += sale.quantity;
+                monthlyStats[month].transactions += 1;
+            });
+            
+            return `
+                <table class="table">
+                    <thead>
+                        <tr><th>Month</th><th>Total Sales</th><th>Items Sold</th><th>Transactions</th></tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(monthlyStats).map(([month, stats]) => `
+                            <tr>
+                                <td>${month}</td>
+                                <td>$${stats.total.toFixed(2)}</td>
+                                <td>${stats.quantity}</td>
+                                <td>${stats.transactions}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function generateSalaryReport() {
+            const startDate = document.getElementById('salaryStartDate').value;
+            const endDate = document.getElementById('salaryEndDate').value;
+            const container = document.getElementById('salaryReport');
+            
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates');
+                return;
+            }
+            
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            
+            const filteredSales = data.sales.filter(sale => {
+                const saleDate = new Date(sale.date);
+                return saleDate >= start && saleDate <= end;
+            });
+            
+            const employeeSalaries = {};
+            
+            data.employees.forEach(employee => {
+                const employeeSales = filteredSales.filter(sale => sale.employeeId === employee.id);
+                const totalSales = employeeSales.reduce((sum, sale) => sum + sale.total, 0);
+                
+                let salary = 0;
+                switch (employee.salaryType) {
+                    case 'fixed':
+                        salary = employee.salaryAmount || 0;
+                        break;
+                    case 'commission':
+                        salary = totalSales * (employee.salaryAmount / 100);
+                        break;
+                    case 'hourly':
+                        // Assuming 8 hours per day worked
+                        const daysWorked = employeeSales.length > 0 ? 
+                            new Set(employeeSales.map(sale => new Date(sale.date).toDateString())).size : 0;
+                        salary = daysWorked * 8 * (employee.salaryAmount || 0);
+                        break;
+                }
+                
+                employeeSalaries[employee.name] = {
+                    baseSalary: employee.salaryAmount || 0,
+                    salaryType: employee.salaryType || 'fixed',
+                    totalSales: totalSales,
+                    calculatedSalary: salary
+                };
+            });
+            
+            container.innerHTML = `
+                <div class="card">
+                    <h3>Salary Report (${startDate} to ${endDate})</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Salary Type</th>
+                                <th>Base Rate</th>
+                                <th>Total Sales</th>
+                                <th>Calculated Salary</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${Object.entries(employeeSalaries).map(([name, data]) => `
+                                <tr>
+                                    <td>${name}</td>
+                                    <td>${data.salaryType}</td>
+                                    <td>$${data.baseSalary}</td>
+                                    <td>$${data.totalSales.toFixed(2)}</td>
+                                    <td>$${data.calculatedSalary.toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function downloadExcel() {
+            alert('Excel download functionality would be implemented with a library like SheetJS');
+        }
+
+        function downloadPDF() {
+            alert('PDF download functionality would be implemented with a library like jsPDF');
+        }
+
+        function printReport() {
+            const reportContent = document.getElementById('salesReport').innerHTML;
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Sales Report</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; }
+                            table { width: 100%; border-collapse: collapse; }
+                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            th { background-color: #f2f2f2; }
+                        </style>
+                    </head>
+                    <body>${reportContent}</body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.print();
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // CRUD operations
+        function deleteEmployee(id) {
+            if (confirm('Are you sure you want to delete this employee?')) {
+                data.employees = data.employees.filter(emp => emp.id !== id);
+                saveData('employees', id, 'delete');
+                populateEmployeesTable();
+                showAlert('Employee deleted successfully!', 'success');
+            }
+        }
+
+        function deleteStore(id) {
+            if (confirm('Are you sure you want to delete this store?')) {
+                data.stores = data.stores.filter(store => store.id !== id);
+                saveData('stores', id, 'delete');
+                populateStoresTable();
+                populateStoreDropdown();
+                showAlert('Store deleted successfully!', 'success');
+            }
+        }
+
+        function deleteProduct(id) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                data.products = data.products.filter(product => product.id !== id);
+                saveData('products', id, 'delete');
+                populateProductsTable();
+                populateProductDropdown();
+                showAlert('Product deleted successfully!', 'success');
+            }
+        }
+
+        function deleteCollection(id) {
+            if (confirm('Are you sure you want to delete this collection?')) {
+                data.collections = data.collections.filter(collection => collection.id !== id);
+                // Remove collection reference from products
+                const affectedProducts = [];
+                data.products.forEach(product => {
+                    if (product.collectionId === id) {
+                        product.collectionId = null;
+                        affectedProducts.push(product.id);
+                    }
+                });
+                
+                saveData('collections', id, 'delete');
+                // Also track affected products
+                affectedProducts.forEach(productId => {
+                    saveData('products', productId, 'update');
+                });
+                
+                populateCollectionsTable();
+                populateCollectionDropdown();
+                populateProductsTable();
+                showAlert('Collection deleted successfully!', 'success');
+            }
+        }
+
+        function editPricing(id) {
+            const pricing = data.pricing.find(p => p.id === id);
+            if (!pricing) return;
+            
+            // Pre-fill the form
+            document.getElementById('pricingStore').value = pricing.storeId;
+            document.getElementById('pricingProduct').value = pricing.productId;
+            document.getElementById('storePrice').value = pricing.storePrice;
+            
+            // Show base price
+            showBasePrice();
+            
+            // Change modal title and form behavior
+            document.querySelector('#pricingModal .modal-title').textContent = 'Edit Store Pricing';
+            document.getElementById('pricingForm').dataset.editId = id;
+            
+            openModal('pricingModal');
+        }
+
+        function deletePricing(id) {
+            if (confirm('Are you sure you want to delete this pricing?')) {
+                data.pricing = data.pricing.filter(pricing => pricing.id !== id);
+                saveData('pricing', id, 'delete');
+                populatePricingTable();
+                populateProductDropdown(); // Refresh product dropdown
+                showAlert('Pricing deleted successfully!', 'success');
+            }
+        }
+
+        function setPricing(storeId, productId) {
+            // Pre-fill the form with the selected store and product
+            document.getElementById('pricingStore').value = storeId;
+            document.getElementById('pricingProduct').value = productId;
+            
+            // Show base price and set default store price
+            showBasePrice();
+            
+            // Change modal title
+            document.querySelector('#pricingModal .modal-title').textContent = 'Set Store Pricing';
+            
+            // Clear any edit ID
+            delete document.getElementById('pricingForm').dataset.editId;
+            
+            openModal('pricingModal');
+        }
+
+        // Edit functions
+        function editEmployee(id) {
+            const employee = data.employees.find(emp => emp.id === id);
+            if (!employee) return;
+            
+            // Pre-fill the form
+            document.getElementById('empName').value = employee.name;
+            document.getElementById('empUsername').value = employee.username;
+            document.getElementById('empPassword').value = employee.password;
+            document.getElementById('empRole').value = employee.role;
+            document.getElementById('empSalaryType').value = employee.salaryType || 'fixed';
+            document.getElementById('empSalaryAmount').value = employee.salaryAmount || 0;
+            
+            // Change modal title and form behavior
+            document.querySelector('#employeeModal .modal-title').textContent = 'Edit Employee';
+            document.getElementById('employeeForm').dataset.editId = id;
+            
+            openModal('employeeModal');
+        }
+
+        function editStore(id) {
+            const store = data.stores.find(s => s.id === id);
+            if (!store) return;
+            
+            // Pre-fill the form
+            document.getElementById('storeName').value = store.name;
+            document.getElementById('storeLocation').value = store.location;
+            document.getElementById('storeManager').value = store.manager;
+            document.getElementById('storePhone').value = store.phone;
+            
+            // Change modal title and form behavior
+            document.querySelector('#storeModal .modal-title').textContent = 'Edit Store';
+            document.getElementById('storeForm').dataset.editId = id;
+            
+            openModal('storeModal');
+        }
+
+        function editProduct(id) {
+            const product = data.products.find(p => p.id === id);
+            if (!product) return;
+            
+            // Pre-fill the form
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productPrice').value = product.price;
+            document.getElementById('productCollection').value = product.collectionId || '';
+            
+            // Change modal title and form behavior
+            document.querySelector('#productModal .modal-title').textContent = 'Edit Product';
+            document.getElementById('productForm').dataset.editId = id;
+            
+            openModal('productModal');
+        }
+
+        function editCollection(id) {
+            const collection = data.collections.find(c => c.id === id);
+            if (!collection) return;
+            
+            // Pre-fill the form
+            document.getElementById('collectionName').value = collection.name;
+            document.getElementById('collectionDescription').value = collection.description || '';
+            
+            // Change modal title and form behavior
+            document.querySelector('#collectionModal .modal-title').textContent = 'Edit Collection';
+            document.getElementById('collectionForm').dataset.editId = id;
+            
+            openModal('collectionModal');
+        }
+
+        // Utility functions
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Sync Queue Management Functions
+        function addToSyncQueue(action, collection, itemId, data = null) {
+            const queueItem = {
+                id: generateId(),
+                action: action, // 'create', 'update', 'delete'
+                collection: collection,
+                itemId: itemId,
+                data: data,
+                timestamp: Date.now(),
+                retryCount: 0
+            };
+            
+            // Remove any existing queue items for the same item to avoid duplicates
+            syncQueue = syncQueue.filter(item => !(item.collection === collection && item.itemId === itemId));
+            
+            // Add new item to queue
+            syncQueue.push(queueItem);
+            
+            // Save queue to localStorage
+            localStorage.setItem('syncQueue', JSON.stringify(syncQueue));
+            
+            console.log(`📋 Added to sync queue: ${action} ${collection}/${itemId}`);
+            updateConnectionStatus();
+            
+            // Trigger background sync if connected
+            if (isFirebaseConnected && database && firebaseUser) {
+                queueBackgroundSync();
+            }
+        }
+
+        function loadSyncQueue() {
+            const savedQueue = localStorage.getItem('syncQueue');
+            if (savedQueue) {
+                try {
+                    syncQueue = JSON.parse(savedQueue);
+                    console.log(`📋 Loaded ${syncQueue.length} items from sync queue`);
+                } catch (error) {
+                    console.error('❌ Error loading sync queue:', error);
+                    syncQueue = [];
+                }
+            }
+        }
+
+        function clearSyncQueue() {
+            syncQueue = [];
+            localStorage.removeItem('syncQueue');
+            console.log('🧹 Sync queue cleared');
+            updateConnectionStatus();
+        }
+
+        async function saveData(changedCollection = null, changedItemId = null, action = 'update') {
+            // Always save to localStorage first (offline-first approach)
+            localStorage.setItem('salesData', JSON.stringify(data));
+            localStorage.setItem('lastSync', new Date().toISOString());
+            updateLastSync();
+            
+            // Add to sync queue if we have specific changes
+            if (changedCollection && changedItemId) {
+                const itemData = data[changedCollection].find(item => item.id === changedItemId);
+                addToSyncQueue(action, changedCollection, changedItemId, itemData);
+            }
+            
+            updateConnectionStatus();
+        }
+
+        function queueBackgroundSync() {
+            // Debounce sync requests to avoid too frequent syncing
+            clearTimeout(window.syncTimeout);
+            window.syncTimeout = setTimeout(async () => {
+                if (!isSyncing && isFirebaseConnected && syncQueue.length > 0) {
+                    await processSyncQueue();
+                }
+            }, 2000); // Wait 2 seconds before syncing
+        }
+
+        async function processSyncQueue() {
+            if (isSyncing || !isFirebaseConnected || !database || !firebaseUser || syncQueue.length === 0) {
+                return;
+            }
+
+            isSyncing = true;
+            updateConnectionStatus();
+            
+            try {
+                console.log(`🔄 Processing sync queue with ${syncQueue.length} items...`);
+                
+                let processedCount = 0;
+                let failedItems = [];
+                
+                // Process queue items one by one
+                for (const queueItem of [...syncQueue]) {
+                    try {
+                        const collectionRef = database.collection(`users/${firebaseUser.uid}/${queueItem.collection}`);
+                        const docRef = collectionRef.doc(queueItem.itemId);
+                        
+                        switch (queueItem.action) {
+                            case 'create':
+                            case 'update':
+                                if (queueItem.data) {
+                                    await docRef.set({
+                                        ...queueItem.data,
+                                        lastModified: firebase.firestore.FieldValue.serverTimestamp(),
+                                        syncedAt: new Date().toISOString(),
+                                        userId: firebaseUser.uid
+                                    });
+                                    console.log(`✅ ${queueItem.action}d ${queueItem.collection}/${queueItem.itemId}`);
+                                } else {
+                                    console.warn(`⚠️ No data for ${queueItem.action} operation on ${queueItem.collection}/${queueItem.itemId}`);
+                                }
+                                break;
+                                
+                            case 'delete':
+                                await docRef.delete();
+                                console.log(`🗑️ Deleted ${queueItem.collection}/${queueItem.itemId}`);
+                                break;
+                                
+                            default:
+                                console.warn(`⚠️ Unknown action: ${queueItem.action}`);
+                        }
+                        
+                        // Remove successfully processed item from queue
+                        syncQueue = syncQueue.filter(item => item.id !== queueItem.id);
+                        processedCount++;
+                        
+                    } catch (itemError) {
+                        console.error(`❌ Failed to sync ${queueItem.collection}/${queueItem.itemId}:`, itemError);
+                        
+                        // Increment retry count
+                        queueItem.retryCount = (queueItem.retryCount || 0) + 1;
+                        
+                        // Remove item if max retries reached
+                        if (queueItem.retryCount >= maxRetries) {
+                            console.log(`🚫 Max retries reached for ${queueItem.collection}/${queueItem.itemId}, removing from queue`);
+                            syncQueue = syncQueue.filter(item => item.id !== queueItem.id);
+                            failedItems.push(queueItem);
+                        } else {
+                            console.log(`🔄 Will retry ${queueItem.collection}/${queueItem.itemId} (${queueItem.retryCount}/${maxRetries})`);
+                        }
+                    }
+                }
+                
+                // Save updated queue to localStorage
+                localStorage.setItem('syncQueue', JSON.stringify(syncQueue));
+                
+                console.log(`✅ Sync queue processed! ${processedCount} items synced, ${syncQueue.length} remaining, ${failedItems.length} failed`);
+                syncRetryCount = 0; // Reset retry count on success
+                
+                // Update sync metadata
+                try {
+                    await database.collection(`users/${firebaseUser.uid}/metadata`).doc('sync_info').set({
+                        lastSync: firebase.firestore.FieldValue.serverTimestamp(),
+                        syncedAt: new Date().toISOString(),
+                        processedItems: processedCount,
+                        queueLength: syncQueue.length,
+                        failedItems: failedItems.length,
+                        syncType: 'queue_processing',
+                        version: '1.0'
+                    });
+                } catch (metaError) {
+                    console.warn('⚠️ Could not update sync metadata:', metaError);
+                }
+                
+            } catch (error) {
+                console.error('❌ Sync queue processing failed:', error);
+                
+                // Implement retry logic for entire queue
+                syncRetryCount++;
+                if (syncRetryCount < maxRetries) {
+                    console.log(`🔄 Retrying queue processing in ${syncRetryCount * 5} seconds... (${syncRetryCount}/${maxRetries})`);
+                    setTimeout(() => {
+                        if (isFirebaseConnected && syncQueue.length > 0) {
+                            processSyncQueue();
+                        }
+                    }, syncRetryCount * 5000);
+                } else {
+                    console.log('❌ Max retry attempts reached for queue processing. Will retry when connection is restored.');
+                    syncRetryCount = 0;
+                }
+                
+                if (error.code === 'permission-denied') {
+                    console.error('🚫 Permission denied - check Firestore rules');
+                } else if (error.code === 'unauthenticated') {
+                    console.error('🔐 Authentication error - user may need to re-login');
+                    isFirebaseConnected = false;
+                }
+            } finally {
+                isSyncing = false;
+                updateConnectionStatus();
+                updateLastSync();
+            }
+        }
+
+        // Legacy sync function - now uses queue system
+        async function syncToFirebase() {
+            if (!isFirebaseConnected || !database || !firebaseUser) {
+                console.log('🚫 Firebase not available for sync');
+                return;
+            }
+            
+            console.log('🔄 Legacy sync function called - using queue system instead');
+            queueAllDataForSync();
+        }
+
+        async function loadFromFirebase() {
+            if (!isFirebaseConnected || !database) {
+                console.log('🚫 Firebase not connected - loading from local storage');
+                loadFromLocalStorage();
+                return;
+            }
+            
+            // Check if user is authenticated
+            if (!firebaseUser) {
+                console.log('🚫 User not authenticated - loading from local storage');
+                loadFromLocalStorage();
+                return;
+            }
+            
+            try {
+                console.log('📥 Loading latest data from Firebase Firestore for user:', firebaseUser.uid);
+                
+                const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
+                let hasData = false;
+                let totalLoaded = 0;
+                
+                // Initialize all collections first
+                collections.forEach(collectionName => {
+                    data[collectionName] = [];
+                });
+                
+                for (const collectionName of collections) {
+                    try {
+                        console.log(`📦 Loading ${collectionName} collection...`);
+                        const collectionRef = database.collection(`users/${firebaseUser.uid}/${collectionName}`);
+                        const snapshot = await collectionRef.orderBy('lastModified', 'desc').get();
+                        
+                        data[collectionName] = [];
+                        
+                        if (!snapshot.empty) {
+                            snapshot.forEach(doc => {
+                                const item = { ...doc.data() };
+                                
+                                // Clean up Firebase metadata
+                                delete item.lastModified;
+                                delete item.syncedAt;
+                                delete item.userId;
+                                
+                                // Ensure item has required ID
+                                if (item.id) {
+                                    data[collectionName].push(item);
+                                    hasData = true;
+                                    totalLoaded++;
+                                } else {
+                                    console.warn(`⚠️ Skipping item without ID in ${collectionName}:`, item);
+                                }
+                            });
+                        }
+                        
+                        console.log(`✅ Loaded ${data[collectionName].length} items from ${collectionName}`);
+                        
+                    } catch (collectionError) {
+                        console.error(`❌ Error loading ${collectionName} from Firebase:`, collectionError);
+                        
+                        if (collectionError.code === 'permission-denied') {
+                            console.log(`🚫 Permission denied for ${collectionName} - user may not be authenticated properly`);
+                        } else if (collectionError.code === 'unauthenticated') {
+                            console.log(`🔐 User not authenticated for ${collectionName}`);
+                        }
+                        
+                        // Initialize empty array if collection doesn't exist or has permission issues
+                        data[collectionName] = [];
+                    }
+                }
+                
+                // Save to localStorage as backup after loading from Firebase
+                localStorage.setItem('salesData', JSON.stringify(data));
+                console.log('💾 Data backed up to local storage');
+                
+                // Clear sync queue since we have the latest data from Firebase
+                if (hasData && totalLoaded > 0) {
+                    clearSyncQueue();
+                    console.log(`🎉 Latest data loaded from Firebase! ${totalLoaded} items loaded`);
+                    console.log('📊 Data summary after Firebase load:', {
+                        employees: data.employees.length,
+                        stores: data.stores.length,
+                        collections: data.collections.length,
+                        products: data.products.length,
+                        pricing: data.pricing.length,
+                        sales: data.sales.length
+                    });
+                } else {
+                    console.log('⚠️ No data found in Firebase - checking local storage and sample data');
+                    
+                    // Load from local storage first
+                    loadFromLocalStorage();
+                    
+                    // If still no data exists, load sample data and queue it for sync
+                    if (!data.employees || data.employees.length === 0) {
+                        console.log('📦 No existing data found - loading sample data...');
+                        loadSampleData();
+                        
+                        // Queue sample data for sync after a short delay
+                        setTimeout(() => {
+                            console.log('📋 Queuing sample data for sync...');
+                            queueAllDataForSync();
+                        }, 2000);
+                    } else {
+                        console.log('✅ Using existing local storage data');
+                        // Queue existing local data for sync
+                        setTimeout(() => {
+                            console.log('📋 Queuing local data for sync...');
+                            queueAllDataForSync();
+                        }, 1000);
+                    }
+                }
+                
+                // Refresh UI if user is logged in
+                if (currentUser) {
+                    if (currentUser.role === 'admin') {
+                        loadAdminData();
+                    } else {
+                        loadEmployeeData();
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Error loading from Firebase Firestore:', error);
+                
+                if (error.code === 'permission-denied') {
+                    console.error('Firebase permission denied - using local data');
+                } else if (error.code === 'unauthenticated') {
+                    console.error('Authentication error - using local data');
+                }
+                
+                loadFromLocalStorage();
+                
+                // If no local data, load sample data
+                if (!data.employees || data.employees.length === 0) {
+                    loadSampleData();
+                }
+            }
+        }
+
+        function queueAllDataForSync() {
+            console.log('📋 Queuing all local data for Firebase sync...');
+            
+            Object.keys(data).forEach(collectionName => {
+                if (data[collectionName] && Array.isArray(data[collectionName])) {
+                    data[collectionName].forEach(item => {
+                        if (item && item.id) {
+                            addToSyncQueue('create', collectionName, item.id, item);
+                        }
+                    });
+                }
+            });
+            
+            console.log(`📋 Queued ${syncQueue.length} items for sync`);
+        }
+
+        function setupRealtimeListeners() {
+            if (!isFirebaseConnected || !database || !firebaseUser) {
+                console.log('Cannot setup real-time listeners - Firebase not connected or user not authenticated');
+                return;
+            }
+            
+            console.log('Setting up real-time listeners for user:', firebaseUser.uid);
+            
+            const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
+            
+            collections.forEach(collectionName => {
+                const ref = database.ref(`users/${firebaseUser.uid}/${collectionName}`);
+                
+                const listener = ref.on('value', 
+                    (snapshot) => {
+                        console.log(`Real-time update received for ${collectionName}`);
+                        const collectionData = snapshot.val();
+                        data[collectionName] = [];
+                        
+                        if (collectionData) {
+                            // Convert object back to array
+                            Object.keys(collectionData).forEach(key => {
+                                const item = collectionData[key];
+                                // Clean up Firebase metadata
+                                delete item.lastModified;
+                                delete item.syncedAt;
+                                delete item.userId;
+                                data[collectionName].push(item);
+                            });
+                        }
+                        
+                        // Save to localStorage
+                        localStorage.setItem('salesData', JSON.stringify(data));
+                        
+                        // Update UI if needed
+                        if (currentUser) {
+                            if (currentUser.role === 'admin') {
+                                updateAdminTables();
+                            } else {
+                                updateEmployeeData();
+                            }
+                        }
+                        
+                        updateLastSync();
+                    },
+                    (error) => {
+                        console.error(`Error listening to ${collectionName}:`, error);
+                        
+                        if (error.code === 'PERMISSION_DENIED') {
+                            console.log(`Permission denied for real-time updates on ${collectionName}`);
+                        }
+                    }
+                );
+                
+                // Store reference to listener for cleanup
+                unsubscribeListeners.push(() => ref.off('value', listener));
+            });
+            
+            console.log('Real-time listeners setup complete');
+        }
+
+        function updateAdminTables() {
+            if (document.getElementById('adminDashboard').classList.contains('hidden')) return;
+            
+            populateEmployeesTable();
+            populateStoresTable();
+            populateProductsTable();
+            populateCollectionsTable();
+            populatePricingTable();
+            populatePricingDropdowns();
+            populateCollectionDropdown();
+        }
+
+        function updateEmployeeData() {
+            if (document.getElementById('employeePortal').classList.contains('hidden')) return;
+            
+            populateStoreDropdown();
+            populateProductDropdown();
+            updateEmployeeDashboard();
+            loadTodaysSales();
+        }
+
+        function loadFromLocalStorage() {
+            const savedData = localStorage.getItem('salesData');
+            if (savedData) {
+                try {
+                    const parsedData = JSON.parse(savedData);
+                    
+                    // Ensure all required collections exist
+                    const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
+                    collections.forEach(collectionName => {
+                        if (parsedData[collectionName] && Array.isArray(parsedData[collectionName])) {
+                            data[collectionName] = parsedData[collectionName];
+                        } else {
+                            data[collectionName] = [];
+                            console.log(`🔧 Initialized empty ${collectionName} collection from local storage`);
+                        }
+                    });
+                    
+                    console.log('📱 Data loaded from local storage:', {
+                        employees: data.employees.length,
+                        stores: data.stores.length,
+                        collections: data.collections.length,
+                        products: data.products.length,
+                        pricing: data.pricing.length,
+                        sales: data.sales.length
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ Error parsing local storage data:', error);
+                    // Initialize empty data if parsing fails
+                    initializeEmptyData();
+                }
+            } else {
+                console.log('📱 No local storage data found - initializing empty data');
+                initializeEmptyData();
+            }
+            
+            // Load pending changes from localStorage
+            loadPendingChanges();
+        }
+
+        function loadPendingChanges() {
+            const savedPendingChanges = localStorage.getItem('pendingChanges');
+            if (savedPendingChanges) {
+                try {
+                    const parsedPending = JSON.parse(savedPendingChanges);
+                    Object.keys(pendingChanges).forEach(key => {
+                        if (parsedPending[key] && Array.isArray(parsedPending[key])) {
+                            pendingChanges[key] = new Set(parsedPending[key]);
+                        }
+                    });
+                    
+                    const totalPending = Object.values(pendingChanges).reduce((total, set) => total + set.size, 0);
+                    if (totalPending > 0) {
+                        console.log(`📋 Loaded ${totalPending} pending changes from local storage`);
+                    }
+                } catch (error) {
+                    console.error('❌ Error parsing pending changes:', error);
+                }
+            }
+        }
+
+        function initializeEmptyData() {
+            const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
+            collections.forEach(collectionName => {
+                data[collectionName] = [];
+            });
+            console.log('🔧 Initialized empty data structure');
+        }
+
+        function loadSampleData() {
+            // Initialize all data arrays if they don't exist
+            if (!data.employees) data.employees = [];
+            if (!data.stores) data.stores = [];
+            if (!data.collections) data.collections = [];
+            if (!data.products) data.products = [];
+            if (!data.pricing) data.pricing = [];
+            if (!data.sales) data.sales = [];
+            
+            // Load sample data if no data exists
+            if (data.employees.length === 0) {
+                console.log('📦 Loading sample data for first time setup...');
+                
+                data.employees = [
+                    {
+                        id: 'admin1',
+                        name: 'Admin User',
+                        username: 'admin',
+                        password: 'admin123',
+                        role: 'admin',
+                        salaryType: 'fixed',
+                        salaryAmount: 5000
+                    },
+                    {
+                        id: 'emp1',
+                        name: 'John Doe',
+                        username: 'john',
+                        password: 'john123',
+                        role: 'employee',
+                        salaryType: 'commission',
+                        salaryAmount: 10
+                    }
+                ];
+                
+                data.stores = [
+                    {
+                        id: 'store1',
+                        name: 'Downtown Store',
+                        location: '123 Main St',
+                        manager: 'Jane Smith',
+                        phone: '555-0123'
+                    },
+                    {
+                        id: 'store2',
+                        name: 'Mall Location',
+                        location: '456 Mall Ave',
+                        manager: 'Bob Johnson',
+                        phone: '555-0456'
+                    }
+                ];
+                
+                data.collections = [
+                    {
+                        id: 'col1',
+                        name: 'Premium Wines',
+                        description: 'High-end wine collection'
+                    },
+                    {
+                        id: 'col2',
+                        name: 'Craft Beers',
+                        description: 'Local and imported craft beers'
+                    }
+                ];
+                
+                data.products = [
+                    {
+                        id: 'prod1',
+                        name: 'Cabernet Sauvignon',
+                        price: 25.99,
+                        collectionId: 'col1'
+                    },
+                    {
+                        id: 'prod2',
+                        name: 'IPA Beer',
+                        price: 8.99,
+                        collectionId: 'col2'
+                    },
+                    {
+                        id: 'prod3',
+                        name: 'Chardonnay',
+                        price: 22.99,
+                        collectionId: 'col1'
+                    }
+                ];
+                
+                data.pricing = [
+                    {
+                        id: 'price1',
+                        storeId: 'store1',
+                        productId: 'prod1',
+                        storePrice: 28.99
+                    },
+                    {
+                        id: 'price2',
+                        storeId: 'store2',
+                        productId: 'prod1',
+                        storePrice: 24.99
+                    },
+                    {
+                        id: 'price3',
+                        storeId: 'store1',
+                        productId: 'prod2',
+                        storePrice: 9.99
+                    }
+                ];
                 
                 // Initialize empty sales array
                 data.sales = [];
@@ -822,6 +4225,6 @@ data.pricing = [];
                 e.target.classList.remove('active');
             }
         });
-    
-
-(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bdeaaf564af9e7',t:'MTc1NDY0NDYwNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bdeaaf564af9e7',t:'MTc1NDY0NDYwNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
