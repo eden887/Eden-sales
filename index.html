@@ -714,8 +714,11 @@
                 <div id="dbStatus" class="status-indicator firebase-connected">
                     🔥 Firebase Connected
                 </div>
-                <div style="font-size: 0.8rem; color: #6b7280;">
-                    Last synced: <span id="lastSync">8/7/2025, 7:35:53 PM</span>
+                <div style="font-size: 0.8rem; color: #6b7280; display: flex; align-items: center; gap: 8px; justify-content: center;">
+                    Last synced: <span id="lastSync">8/8/2025, 10:47:11 AM</span>
+                    <button id="monitorBtn" style="background: none; border: none; padding: 4px 8px; font-size: 0.7rem; min-width: auto; cursor: pointer;" onclick="checkFirebaseStatus()">
+                        🟢
+                    </button>
                 </div>
             </div>
             
@@ -733,60 +736,7 @@
                 </button>
             </form>
             
-            <!-- Firebase Configuration Notice -->
-            <div class="security-warning">
-                <h4>🔧 Firebase Configuration - One-Time Setup</h4>
-                <p><strong>✅ This is a ONE-TIME configuration!</strong> Once set up, it works on ALL devices automatically.</p>
-                
-                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; margin: 12px 0;">
-                    <h5 style="color: #60a5fa; margin-bottom: 8px;">📋 Step-by-Step Setup:</h5>
-                    <ol style="margin: 8px 0; padding-left: 20px; color: rgba(248, 249, 250, 0.9); line-height: 1.6;">
-                        <li>Go to <a href="https://console.firebase.google.com/" target="_blank" style="color: #60a5fa; text-decoration: underline;">Firebase Console</a></li>
-                        <li>Select your <strong>"eden-sale"</strong> project (or create it if it doesn't exist)</li>
-                        <li>Click the ⚙️ gear icon → <strong>Project Settings</strong></li>
-                        <li>Scroll down to <strong>"Your apps"</strong> section</li>
-                        <li>Click the <strong>&lt;/&gt;</strong> icon to add a web app (if not already added)</li>
-                        <li>Copy these two values from the config:</li>
-                    </ol>
-                </div>
-                
-                <div style="background: rgba(139, 134, 128, 0.2); border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace; font-size: 0.85rem;">
-                    <div style="color: #10b981;">✅ Already Set:</div>
-                    <div>apiKey: "AIzaSyAHMTS0GTPifnbKWRIjX5JA4l-V4F4oijk"</div>
-                    <div>projectId: "eden-sale"</div>
-                    <div>databaseURL: "https://eden-sale-default-rtdb..."</div>
-                    <br>
-                    <div style="color: #ef4444;">❌ Need to Update:</div>
-                    <div>messagingSenderId: "397135903847" </div>
-                    <div>appId: "1:397135903847:web:b8055a22aa90b2003528c2" </div>
-                </div>
-                
-                <div style="background: rgba(5, 150, 105, 0.2); border-radius: 8px; padding: 12px; margin: 12px 0;">
-                    <h5 style="color: #10b981; margin-bottom: 8px;">🌐 Multi-Device Access:</h5>
-                    <ul style="margin: 8px 0; padding-left: 20px; color: rgba(248, 249, 250, 0.9); line-height: 1.6;">
-                        <li>✅ <strong>Configure ONCE</strong> - Works on all devices automatically</li>
-                        <li>✅ <strong>Same login credentials</strong> - Use admin/admin123 or john/john123 anywhere</li>
-                        <li>✅ <strong>Instant sync</strong> - Changes appear on all devices immediately</li>
-                        <li>✅ <strong>No device setup</strong> - Just open the website and login</li>
-                        <li>✅ <strong>Works on</strong> - Phone, tablet, computer, any browser</li>
-                    </ul>
-                </div>
-                
-                <div style="background: rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 12px; margin: 12px 0;">
-                    <h5 style="color: #60a5fa; margin-bottom: 8px;">📱 How Other Devices Work:</h5>
-                    <div style="color: rgba(248, 249, 250, 0.9); line-height: 1.6;">
-                        <strong>1. Phone/Tablet:</strong> Open website → Login → Automatic sync ✅<br>
-                        <strong>2. Another Computer:</strong> Open website → Login → Automatic sync ✅<br>
-                        <strong>3. Different Browser:</strong> Open website → Login → Automatic sync ✅<br>
-                        <br>
-                        <strong>🔑 Key Point:</strong> The Firebase configuration is built into the website code. Once you update those 2 values, every device that accesses the website will automatically connect to your Firebase database!
-                    </div>
-                </div>
-                
-                <p style="font-size: 0.85rem; margin-top: 12px; color: rgba(248, 249, 250, 0.7);">
-                    💾 <strong>Current Mode:</strong> Local Storage - Your data is saved in your browser only. Firebase setup enables cloud sync across all devices.
-                </p>
-            </div>
+
             
             <!-- Developer Credit on Login Page -->
             <div style="text-align: center; padding: 20px; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -1421,16 +1371,15 @@
             databaseURL: "https://eden-sale-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "eden-sale",
             storageBucket: "eden-sale.appspot.com",
-            messagingSenderId: "397135903847",
-            appId: "1:397135903847:web:b8055a22aa90b2003528c2"
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef123456789"
         };
 
         // Check if Firebase config is properly set
         function isFirebaseConfigValid() {
-            return firebaseConfig.messagingSenderId !== "397135903847" && 
-                   firebaseConfig.appId !== "1:397135903847:web:b8055a22aa90b2003528c2" &&
-                   firebaseConfig.apiKey && 
-                   firebaseConfig.projectId;
+            return firebaseConfig.apiKey && 
+                   firebaseConfig.projectId &&
+                   firebaseConfig.databaseURL;
         }
 
         // Initialize app
@@ -1824,8 +1773,6 @@
                                 
                                 // Sync sample data to Firebase
                                 await syncToFirebase();
-                                
-                                showAlert('Firebase account created and data synced! 🔥', 'success');
                                 
                             } catch (createError) {
                                 console.error('❌ Error creating Firebase user:', createError);
@@ -3279,7 +3226,6 @@
                     await syncToFirebase();
                 } catch (error) {
                     console.error('Error syncing to Firebase:', error);
-                    showAlert('Sync error - data saved locally', 'error');
                 }
             }
         }
@@ -3335,10 +3281,8 @@
                         
                         if (collectionError.code === 'PERMISSION_DENIED') {
                             console.error('🚫 Permission denied - Firebase rules may be blocking access');
-                            showAlert(`Permission denied for ${collectionName} - check Firebase rules`, 'error');
                         } else if (collectionError.code === 'UNAUTHENTICATED') {
                             console.error('🔐 User not authenticated properly');
-                            showAlert('Authentication error - please login again', 'error');
                         }
                     }
                 }
@@ -3352,19 +3296,16 @@
                 });
                 
                 console.log(`🎉 Firebase Realtime Database sync completed! ${totalSynced} items synced`);
-                if (totalSynced > 0) {
-                    showAlert(`Data synced to Firebase Realtime DB! ${totalSynced} items 🔥`, 'success');
-                }
                 
             } catch (error) {
                 console.error('❌ Error syncing to Firebase Realtime Database:', error);
                 
                 if (error.code === 'PERMISSION_DENIED') {
-                    showAlert('Firebase permission denied - check authentication', 'error');
+                    console.error('Firebase permission denied - check authentication');
                 } else if (error.code === 'UNAUTHENTICATED') {
-                    showAlert('Authentication error - please login again', 'error');
+                    console.error('Authentication error - please login again');
                 } else {
-                    showAlert('Sync error - data saved locally', 'error');
+                    console.error('Sync error - data saved locally');
                 }
             }
         }
@@ -3426,10 +3367,8 @@
                         
                         if (collectionError.code === 'PERMISSION_DENIED') {
                             console.log(`🚫 Permission denied for ${collectionName} - user may not be authenticated properly`);
-                            showAlert(`Permission denied for ${collectionName}`, 'error');
                         } else if (collectionError.code === 'UNAUTHENTICATED') {
                             console.log(`🔐 User not authenticated for ${collectionName}`);
-                            showAlert('Authentication error - please login again', 'error');
                         }
                         
                         // Initialize empty array if collection doesn't exist or has permission issues
@@ -3444,7 +3383,6 @@
                 
                 if (hasData && totalLoaded > 0) {
                     console.log(`🎉 Data loaded from Firebase Realtime Database successfully! ${totalLoaded} items loaded`);
-                    showAlert(`Data loaded from Firebase Realtime DB! ${totalLoaded} items 🔥`, 'success');
                 } else {
                     console.log('⚠️ No data found in Firebase - loading sample data');
                     
@@ -3476,9 +3414,9 @@
                 console.error('❌ Error loading from Firebase Realtime Database:', error);
                 
                 if (error.code === 'PERMISSION_DENIED') {
-                    showAlert('Firebase permission denied - using local data', 'error');
+                    console.error('Firebase permission denied - using local data');
                 } else if (error.code === 'UNAUTHENTICATED') {
-                    showAlert('Authentication error - using local data', 'error');
+                    console.error('Authentication error - using local data');
                 }
                 
                 loadFromLocalStorage();
@@ -3535,7 +3473,6 @@
                         
                         if (error.code === 'PERMISSION_DENIED') {
                             console.log(`Permission denied for real-time updates on ${collectionName}`);
-                            showAlert('Real-time sync disabled - permission denied', 'error');
                         }
                     }
                 );
@@ -3737,6 +3674,81 @@
 
         // Firebase disconnect function removed - using permanent connection
 
+        // Firebase monitoring function
+        function checkFirebaseStatus() {
+            const monitorBtn = document.getElementById('monitorBtn');
+            const originalText = monitorBtn.innerHTML;
+            
+            monitorBtn.innerHTML = '🔄 Checking...';
+            monitorBtn.disabled = true;
+            
+            setTimeout(() => {
+                let statusMessage = '';
+                let statusColor = '';
+                
+                if (isFirebaseConnected && database && firebaseUser) {
+                    statusMessage = `✅ Firebase Connected\n🔥 Database: Active\n👤 User: ${firebaseUser.uid.substring(0, 8)}...\n📊 Collections: ${Object.keys(data).length}\n⏰ Last Sync: ${new Date().toLocaleString()}`;
+                    statusColor = '#10b981';
+                } else if (isFirebaseConnected && database) {
+                    statusMessage = `⚠️ Firebase Connected but not authenticated\n🔥 Database: Active\n👤 User: Not logged in\n📊 Using local storage`;
+                    statusColor = '#f59e0b';
+                } else {
+                    statusMessage = `❌ Firebase Not Connected\n💾 Using Local Storage Mode\n📊 Data saved locally only\n⚠️ No cloud sync available`;
+                    statusColor = '#ef4444';
+                }
+                
+                // Create custom alert modal
+                const alertModal = document.createElement('div');
+                alertModal.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+                    display: flex; align-items: center; justify-content: center;
+                    z-index: 10000; animation: fadeIn 0.3s ease-out;
+                `;
+                
+                alertModal.innerHTML = `
+                    <div style="
+                        background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+                        backdrop-filter: blur(30px); border: 1px solid rgba(255,255,255,0.15);
+                        border-radius: 20px; padding: 30px; max-width: 400px; width: 90%;
+                        box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+                        text-align: center; color: #f8f9fa;
+                    ">
+                        <h3 style="color: ${statusColor}; margin-bottom: 20px; font-size: 1.3rem;">
+                            🔍 Firebase Status Monitor
+                        </h3>
+                        <div style="
+                            background: rgba(0,0,0,0.3); border-radius: 12px; padding: 16px;
+                            font-family: monospace; font-size: 0.9rem; line-height: 1.6;
+                            text-align: left; white-space: pre-line; color: rgba(248, 249, 250, 0.9);
+                        ">${statusMessage}</div>
+                        <button onclick="this.parentElement.parentElement.remove()" 
+                                style="
+                                    margin-top: 20px; padding: 10px 20px; background: ${statusColor};
+                                    color: white; border: none; border-radius: 8px; cursor: pointer;
+                                    font-weight: 600; transition: all 0.3s;
+                                " 
+                                onmouseover="this.style.transform='translateY(-2px)'"
+                                onmouseout="this.style.transform='translateY(0)'">
+                            ✅ Close
+                        </button>
+                    </div>
+                `;
+                
+                document.body.appendChild(alertModal);
+                
+                // Remove modal when clicking outside
+                alertModal.addEventListener('click', (e) => {
+                    if (e.target === alertModal) {
+                        alertModal.remove();
+                    }
+                });
+                
+                monitorBtn.innerHTML = originalText;
+                monitorBtn.disabled = false;
+            }, 1000);
+        }
+
         // Close modals when clicking outside
         document.addEventListener('click', function(e) {
             if (e.target.classList.contains('modal')) {
@@ -3744,6 +3756,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bcf74f0168fa02',t:'MTc1NDYzNDYzNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bd1ca395f3f9cd',t:'MTc1NDYzNjE2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
-
