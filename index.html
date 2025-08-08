@@ -733,7 +733,60 @@
                 </button>
             </form>
             
-            <!-- Firebase configuration removed - now hardcoded in script -->
+            <!-- Firebase Configuration Notice -->
+            <div class="security-warning">
+                <h4>🔧 Firebase Configuration - One-Time Setup</h4>
+                <p><strong>✅ This is a ONE-TIME configuration!</strong> Once set up, it works on ALL devices automatically.</p>
+                
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 12px; margin: 12px 0;">
+                    <h5 style="color: #60a5fa; margin-bottom: 8px;">📋 Step-by-Step Setup:</h5>
+                    <ol style="margin: 8px 0; padding-left: 20px; color: rgba(248, 249, 250, 0.9); line-height: 1.6;">
+                        <li>Go to <a href="https://console.firebase.google.com/" target="_blank" style="color: #60a5fa; text-decoration: underline;">Firebase Console</a></li>
+                        <li>Select your <strong>"eden-sale"</strong> project (or create it if it doesn't exist)</li>
+                        <li>Click the ⚙️ gear icon → <strong>Project Settings</strong></li>
+                        <li>Scroll down to <strong>"Your apps"</strong> section</li>
+                        <li>Click the <strong>&lt;/&gt;</strong> icon to add a web app (if not already added)</li>
+                        <li>Copy these two values from the config:</li>
+                    </ol>
+                </div>
+                
+                <div style="background: rgba(139, 134, 128, 0.2); border-radius: 8px; padding: 12px; margin: 12px 0; font-family: monospace; font-size: 0.85rem;">
+                    <div style="color: #10b981;">✅ Already Set:</div>
+                    <div>apiKey: "AIzaSyAHMTS0GTPifnbKWRIjX5JA4l-V4F4oijk"</div>
+                    <div>projectId: "eden-sale"</div>
+                    <div>databaseURL: "https://eden-sale-default-rtdb..."</div>
+                    <br>
+                    <div style="color: #ef4444;">❌ Need to Update:</div>
+                    <div>messagingSenderId: "YOUR_MESSAGING_SENDER_ID" ← Replace this</div>
+                    <div>appId: "YOUR_APP_ID" ← Replace this</div>
+                </div>
+                
+                <div style="background: rgba(5, 150, 105, 0.2); border-radius: 8px; padding: 12px; margin: 12px 0;">
+                    <h5 style="color: #10b981; margin-bottom: 8px;">🌐 Multi-Device Access:</h5>
+                    <ul style="margin: 8px 0; padding-left: 20px; color: rgba(248, 249, 250, 0.9); line-height: 1.6;">
+                        <li>✅ <strong>Configure ONCE</strong> - Works on all devices automatically</li>
+                        <li>✅ <strong>Same login credentials</strong> - Use admin/admin123 or john/john123 anywhere</li>
+                        <li>✅ <strong>Instant sync</strong> - Changes appear on all devices immediately</li>
+                        <li>✅ <strong>No device setup</strong> - Just open the website and login</li>
+                        <li>✅ <strong>Works on</strong> - Phone, tablet, computer, any browser</li>
+                    </ul>
+                </div>
+                
+                <div style="background: rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 12px; margin: 12px 0;">
+                    <h5 style="color: #60a5fa; margin-bottom: 8px;">📱 How Other Devices Work:</h5>
+                    <div style="color: rgba(248, 249, 250, 0.9); line-height: 1.6;">
+                        <strong>1. Phone/Tablet:</strong> Open website → Login → Automatic sync ✅<br>
+                        <strong>2. Another Computer:</strong> Open website → Login → Automatic sync ✅<br>
+                        <strong>3. Different Browser:</strong> Open website → Login → Automatic sync ✅<br>
+                        <br>
+                        <strong>🔑 Key Point:</strong> The Firebase configuration is built into the website code. Once you update those 2 values, every device that accesses the website will automatically connect to your Firebase database!
+                    </div>
+                </div>
+                
+                <p style="font-size: 0.85rem; margin-top: 12px; color: rgba(248, 249, 250, 0.7);">
+                    💾 <strong>Current Mode:</strong> Local Storage - Your data is saved in your browser only. Firebase setup enables cloud sync across all devices.
+                </p>
+            </div>
             
             <!-- Developer Credit on Login Page -->
             <div style="text-align: center; padding: 20px; margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -1361,16 +1414,24 @@
             showSalaryInfo: true
         };
 
-        // Firebase Configuration - Replace with your actual Firebase project config
+        // Firebase Configuration - You need to replace these with your actual Firebase project config
         const firebaseConfig = {
-    apiKey: "AIzaSyAHMTS0GTPifnbKWRIjX5JA4l-V4F4oijk",
+            apiKey: "AIzaSyAHMTS0GTPifnbKWRIjX5JA4l-V4F4oijk",
             authDomain: "eden-sale.firebaseapp.com",
             databaseURL: "https://eden-sale-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "eden-sale",
-            storageBucket: "eden-sale.firebasestorage.app",
-            messagingSenderId: "397135903847",
-            appId: "1:397135903847:web:b8055a22aa90b2003528c2"
+            storageBucket: "eden-sale.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
+
+        // Check if Firebase config is properly set
+        function isFirebaseConfigValid() {
+            return firebaseConfig.messagingSenderId !== "YOUR_MESSAGING_SENDER_ID" && 
+                   firebaseConfig.appId !== "YOUR_APP_ID" &&
+                   firebaseConfig.apiKey && 
+                   firebaseConfig.projectId;
+        }
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', async function() {
@@ -3630,7 +3691,17 @@
 
         async function initializeFirebase() {
             try {
-                // Initialize Firebase with hardcoded config
+                // Check if Firebase config is valid
+                if (!isFirebaseConfigValid()) {
+                    console.log('⚠️ Firebase configuration incomplete - using local storage mode');
+                    console.log('Please update messagingSenderId and appId in the Firebase config');
+                    isFirebaseConnected = false;
+                    updateConnectionStatus();
+                    setDemoMode();
+                    return false;
+                }
+                
+                // Initialize Firebase with config
                 if (!firebase.apps.length) {
                     firebase.initializeApp(firebaseConfig);
                 }
@@ -3642,19 +3713,21 @@
                 // Test database connection
                 try {
                     await database.ref('.info/connected').once('value');
-                    console.log('Firebase Realtime Database connection test successful');
+                    console.log('✅ Firebase Realtime Database connection test successful');
                 } catch (err) {
-                    console.log('Firebase Realtime Database connection test failed:', err);
+                    console.log('❌ Firebase Realtime Database connection test failed:', err);
+                    throw err;
                 }
                 
                 isFirebaseConnected = true;
                 updateConnectionStatus();
                 
-                console.log('Firebase Realtime Database initialized successfully with hardcoded config');
+                console.log('🔥 Firebase initialized successfully');
                 return true;
                 
             } catch (error) {
-                console.error('Firebase initialization error:', error);
+                console.error('❌ Firebase initialization error:', error);
+                console.log('📱 Falling back to local storage mode');
                 isFirebaseConnected = false;
                 updateConnectionStatus();
                 setDemoMode();
@@ -3671,5 +3744,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bce7a060baf9d1',t:'MTc1NDYzMzk5NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bcf74f0168fa02',t:'MTc1NDYzNDYzNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
