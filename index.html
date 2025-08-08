@@ -1333,11 +1333,85 @@
         </div>
     </div>
 
-    <!-- Firebase Config Modal Removed - Now using hardcoded configuration -->
+    <!-- Firebase Security Rules Information -->
+    <div id="firebaseRulesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🔥 Firebase Firestore Rules Setup</h3>
+                <button class="close-btn" onclick="closeModal('firebaseRulesModal')">&times;</button>
+            </div>
+            <div style="max-height: 70vh; overflow-y: auto;">
+                <div class="security-warning">
+                    <h4>🚨 Firestore Rules Required</h4>
+                    <p>Your Firebase Firestore database needs proper security rules with authentication to work with this application.</p>
+                </div>
+                
+                <h4 style="color: #f8f9fa; margin: 20px 0 10px 0;">📋 Step-by-Step Setup:</h4>
+                <ol style="color: rgba(248, 249, 250, 0.9); line-height: 1.6; padding-left: 20px;">
+                    <li>Go to <strong>Firebase Console</strong> → Your Project</li>
+                    <li>Navigate to <strong>Firestore Database</strong> → <strong>Rules</strong></li>
+                    <li>Replace the existing rules with the code below</li>
+                    <li>Click <strong>Publish</strong> to save the rules</li>
+                    <li>Refresh this page and try connecting again</li>
+                </ol>
+                
+                <h4 style="color: #f8f9fa; margin: 20px 0 10px 0;">🔒 Required Firestore Rules:</h4>
+                <div class="security-rules">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to access their own data
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow connection testing
+    match /connection_test/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}</div>
+                
+                <div style="background: rgba(5, 150, 105, 0.2); border: 1px solid rgba(5, 150, 105, 0.3); border-radius: 8px; padding: 16px; margin: 20px 0;">
+                    <h4 style="color: #10b981; margin-bottom: 8px;">✅ What These Rules Do:</h4>
+                    <ul style="color: rgba(248, 249, 250, 0.9); line-height: 1.5; margin: 0; padding-left: 20px;">
+                        <li><strong>Security:</strong> Only allows access to user-specific data</li>
+                        <li><strong>Performance:</strong> Adds database indexes for faster queries</li>
+                        <li><strong>Testing:</strong> Allows connection testing</li>
+                        <li><strong>Organization:</strong> Keeps each user's data separate</li>
+                    </ul>
+                </div>
+                
+                <div style="background: rgba(220, 38, 38, 0.2); border: 1px solid rgba(220, 38, 38, 0.3); border-radius: 8px; padding: 16px; margin: 20px 0;">
+                    <h4 style="color: #f87171; margin-bottom: 8px;">⚠️ Important Notes:</h4>
+                    <ul style="color: rgba(248, 249, 250, 0.9); line-height: 1.5; margin: 0; padding-left: 20px;">
+                        <li>These rules allow read/write access for testing purposes</li>
+                        <li>For production use, implement proper authentication</li>
+                        <li>Each user's data is stored under their unique ID</li>
+                        <li>The system will work in local storage mode if Firebase fails</li>
+                    </ul>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-primary" onclick="testFirebaseConnection()" style="margin-right: 10px;">
+                        🔄 Test Connection
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeModal('firebaseRulesModal')">
+                        📱 Use Local Storage Instead
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script>
         // Global variables
@@ -1345,7 +1419,12 @@
         let firebaseUser = null;
         let isFirebaseConnected = false;
         let database = null;
+        let auth = null;
         let syncQueue = [];
+        let isSyncing = false;
+        let lastSyncAttempt = null;
+        let syncRetryCount = 0;
+        let maxRetries = 3;
         let data = {
             employees: [],
             stores: [],
@@ -1362,13 +1441,12 @@
             showSalaryInfo: true
         };
 
-        // Firebase Configuration - You need to replace these with your actual Firebase project config
+        // Firebase Configuration - Replace with your actual Firebase project settings
         const firebaseConfig = {
             apiKey: "AIzaSyAHMTS0GTPifnbKWRIjX5JA4l-V4F4oijk",
             authDomain: "eden-sale.firebaseapp.com",
-            databaseURL: "https://eden-sale-default-rtdb.asia-southeast1.firebasedatabase.app/",
-            projectId: "eden-sale",
-            storageBucket: "eden-sale.appspot.com",
+            projectId: "eden-sales-management",
+            storageBucket: "eden-sale.firebasestorage.app",
             messagingSenderId: "397135903847",
             appId: "1:397135903847:web:b8055a22aa90b2003528c2"
         };
@@ -1377,13 +1455,19 @@
         function isFirebaseConfigValid() {
             return firebaseConfig.apiKey && 
                    firebaseConfig.projectId &&
-                   firebaseConfig.databaseURL;
+                   firebaseConfig.databaseURL &&
+                   firebaseConfig.apiKey.length > 20 &&
+                   firebaseConfig.projectId !== 'demo-project' &&
+                   !firebaseConfig.databaseURL.includes('demo-project');
         }
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', async function() {
             // Initialize date/time first
             updateCurrentDateTime();
+            
+            // Load sync queue from localStorage
+            loadSyncQueue();
             
             // Initialize Firebase automatically
             await initializeFirebase();
@@ -1395,6 +1479,17 @@
             setupDateValidation();
             setupMobileView();
             
+            // Setup connection monitoring
+            setupConnectionMonitoring();
+            
+            // Setup periodic sync retry for queued items
+            setInterval(() => {
+                if (isFirebaseConnected && !isSyncing && syncQueue.length > 0) {
+                    console.log(`🔄 Periodic sync check: ${syncQueue.length} items in queue`);
+                    queueBackgroundSync();
+                }
+            }, 30000); // Check every 30 seconds
+            
             // Update date/time every second
             setInterval(updateCurrentDateTime, 1000);
         });
@@ -1403,18 +1498,29 @@
             isFirebaseConnected = false;
             updateConnectionStatus();
             loadFromLocalStorage();
+            console.log('📱 Demo mode activated - all data will be saved locally in your browser');
         }
 
         function updateConnectionStatus() {
             const statusElements = document.querySelectorAll('#dbStatus, #syncStatus');
             
             statusElements.forEach(element => {
-                if (isFirebaseConnected) {
+                if (isSyncing) {
                     element.className = 'status-indicator firebase-connected';
-                    element.innerHTML = '🔥 Firebase Connected (Secure)';
+                    element.innerHTML = '🔄 Syncing...';
+                } else if (isFirebaseConnected) {
+                    const queueCount = syncQueue.length;
+                    if (queueCount > 0) {
+                        element.className = 'status-indicator firebase-connected';
+                        element.innerHTML = `🔥 Connected (${queueCount} pending)`;
+                    } else {
+                        element.className = 'status-indicator firebase-connected';
+                        element.innerHTML = '🔥 Firebase Synced';
+                    }
                 } else {
+                    const queueCount = syncQueue.length;
                     element.className = 'status-indicator local-storage';
-                    element.innerHTML = '💾 Local Storage Mode';
+                    element.innerHTML = queueCount > 0 ? `💾 Offline Mode (${queueCount} queued)` : '💾 Offline Mode';
                 }
             });
         }
@@ -1964,8 +2070,9 @@
             const saleDateTime = new Date(saleDate);
             saleDateTime.setHours(new Date().getHours(), new Date().getMinutes(), new Date().getSeconds());
             
+            const saleId = generateId();
             const sale = {
-                id: generateId(),
+                id: saleId,
                 employeeId: currentUser.id,
                 employeeName: currentUser.name,
                 storeId: storeId,
@@ -1983,7 +2090,7 @@
             };
             
             data.sales.push(sale);
-            saveData();
+            saveData('sales', saleId, 'create'); // Track this specific change
             
             // Reset form
             document.getElementById('saleForm').reset();
@@ -2061,7 +2168,7 @@
         function deleteSale(saleId) {
             if (confirm('Are you sure you want to delete this sale?')) {
                 data.sales = data.sales.filter(sale => sale.id !== saleId);
-                saveData();
+                saveData('sales', saleId, 'delete'); // Track deletion
                 updateEmployeeDashboard();
                 loadTodaysSales();
                 showAlert('Sale deleted successfully!', 'success');
@@ -2371,8 +2478,9 @@
             const form = e.target;
             const editId = form.dataset.editId;
             
+            const employeeId = editId || generateId();
             const employee = {
-                id: editId || generateId(),
+                id: employeeId,
                 name: document.getElementById('empName').value,
                 username: document.getElementById('empUsername').value,
                 password: document.getElementById('empPassword').value,
@@ -2388,13 +2496,13 @@
                     data.employees[index] = employee;
                 }
                 showAlert('Employee updated successfully!', 'success');
+                saveData('employees', employeeId, 'update');
             } else {
                 // Add new employee
                 data.employees.push(employee);
                 showAlert('Employee added successfully!', 'success');
+                saveData('employees', employeeId, 'create');
             }
-            
-            saveData();
             populateEmployeesTable();
             closeModal('employeeModal');
             document.getElementById('employeeForm').reset();
@@ -2422,13 +2530,13 @@
                     data.stores[index] = store;
                 }
                 showAlert('Store updated successfully!', 'success');
+                saveData('stores', store.id, 'update');
             } else {
                 // Add new store
                 data.stores.push(store);
                 showAlert('Store added successfully!', 'success');
+                saveData('stores', store.id, 'create');
             }
-            
-            saveData();
             populateStoresTable();
             populateStoreDropdown();
             closeModal('storeModal');
@@ -2456,13 +2564,13 @@
                     data.products[index] = product;
                 }
                 showAlert('Product updated successfully!', 'success');
+                saveData('products', product.id, 'update');
             } else {
                 // Add new product
                 data.products.push(product);
                 showAlert('Product added successfully!', 'success');
+                saveData('products', product.id, 'create');
             }
-            
-            saveData();
             populateProductsTable();
             populateProductDropdown();
             closeModal('productModal');
@@ -2489,13 +2597,13 @@
                     data.collections[index] = collection;
                 }
                 showAlert('Collection updated successfully!', 'success');
+                saveData('collections', collection.id, 'update');
             } else {
                 // Add new collection
                 data.collections.push(collection);
                 showAlert('Collection added successfully!', 'success');
+                saveData('collections', collection.id, 'create');
             }
-            
-            saveData();
             populateCollectionsTable();
             populateCollectionDropdown();
             populateProductsTable(); // Refresh to show updated collection names
@@ -2539,19 +2647,20 @@
                     data.pricing[index] = pricing;
                 }
                 showAlert('Pricing updated successfully!', 'success');
+                saveData('pricing', pricing.id, 'update');
             } else {
                 // Check if pricing already exists for this store-product combination
                 const existingIndex = data.pricing.findIndex(p => p.storeId === storeId && p.productId === productId);
                 if (existingIndex !== -1) {
                     data.pricing[existingIndex] = pricing;
                     showAlert('Pricing updated successfully!', 'success');
+                    saveData('pricing', pricing.id, 'update');
                 } else {
                     data.pricing.push(pricing);
                     showAlert('Pricing added successfully!', 'success');
+                    saveData('pricing', pricing.id, 'create');
                 }
             }
-            
-            saveData();
             populatePricingTable();
             populateProductDropdown(); // Refresh product dropdown with new prices
             closeModal('pricingModal');
@@ -2991,7 +3100,7 @@
         function deleteEmployee(id) {
             if (confirm('Are you sure you want to delete this employee?')) {
                 data.employees = data.employees.filter(emp => emp.id !== id);
-                saveData();
+                saveData('employees', id, 'delete');
                 populateEmployeesTable();
                 showAlert('Employee deleted successfully!', 'success');
             }
@@ -3000,7 +3109,7 @@
         function deleteStore(id) {
             if (confirm('Are you sure you want to delete this store?')) {
                 data.stores = data.stores.filter(store => store.id !== id);
-                saveData();
+                saveData('stores', id, 'delete');
                 populateStoresTable();
                 populateStoreDropdown();
                 showAlert('Store deleted successfully!', 'success');
@@ -3010,7 +3119,7 @@
         function deleteProduct(id) {
             if (confirm('Are you sure you want to delete this product?')) {
                 data.products = data.products.filter(product => product.id !== id);
-                saveData();
+                saveData('products', id, 'delete');
                 populateProductsTable();
                 populateProductDropdown();
                 showAlert('Product deleted successfully!', 'success');
@@ -3021,12 +3130,20 @@
             if (confirm('Are you sure you want to delete this collection?')) {
                 data.collections = data.collections.filter(collection => collection.id !== id);
                 // Remove collection reference from products
+                const affectedProducts = [];
                 data.products.forEach(product => {
                     if (product.collectionId === id) {
                         product.collectionId = null;
+                        affectedProducts.push(product.id);
                     }
                 });
-                saveData();
+                
+                saveData('collections', id, 'delete');
+                // Also track affected products
+                affectedProducts.forEach(productId => {
+                    saveData('products', productId, 'update');
+                });
+                
                 populateCollectionsTable();
                 populateCollectionDropdown();
                 populateProductsTable();
@@ -3056,7 +3173,7 @@
         function deletePricing(id) {
             if (confirm('Are you sure you want to delete this pricing?')) {
                 data.pricing = data.pricing.filter(pricing => pricing.id !== id);
-                saveData();
+                saveData('pricing', id, 'delete');
                 populatePricingTable();
                 populateProductDropdown(); // Refresh product dropdown
                 showAlert('Pricing deleted successfully!', 'success');
@@ -3153,119 +3270,207 @@
             return Date.now().toString(36) + Math.random().toString(36).substr(2);
         }
 
-        async function saveData() {
-            localStorage.setItem('salesData', JSON.stringify(data));
-            localStorage.setItem('lastSync', new Date().toISOString());
-            updateLastSync();
+        // Sync Queue Management Functions
+        function addToSyncQueue(action, collection, itemId, data = null) {
+            const queueItem = {
+                id: generateId(),
+                action: action, // 'create', 'update', 'delete'
+                collection: collection,
+                itemId: itemId,
+                data: data,
+                timestamp: Date.now(),
+                retryCount: 0
+            };
             
+            // Remove any existing queue items for the same item to avoid duplicates
+            syncQueue = syncQueue.filter(item => !(item.collection === collection && item.itemId === itemId));
+            
+            // Add new item to queue
+            syncQueue.push(queueItem);
+            
+            // Save queue to localStorage
+            localStorage.setItem('syncQueue', JSON.stringify(syncQueue));
+            
+            console.log(`📋 Added to sync queue: ${action} ${collection}/${itemId}`);
+            updateConnectionStatus();
+            
+            // Trigger background sync if connected
             if (isFirebaseConnected && database && firebaseUser) {
+                queueBackgroundSync();
+            }
+        }
+
+        function loadSyncQueue() {
+            const savedQueue = localStorage.getItem('syncQueue');
+            if (savedQueue) {
                 try {
-                    await syncToFirebase();
+                    syncQueue = JSON.parse(savedQueue);
+                    console.log(`📋 Loaded ${syncQueue.length} items from sync queue`);
                 } catch (error) {
-                    console.error('Error syncing to Firebase:', error);
+                    console.error('❌ Error loading sync queue:', error);
+                    syncQueue = [];
                 }
             }
         }
 
-        async function syncToFirebase() {
-            if (!isFirebaseConnected || !database) {
-                console.log('🚫 Firebase not connected - skipping sync');
-                return;
+        function clearSyncQueue() {
+            syncQueue = [];
+            localStorage.removeItem('syncQueue');
+            console.log('🧹 Sync queue cleared');
+            updateConnectionStatus();
+        }
+
+        async function saveData(changedCollection = null, changedItemId = null, action = 'update') {
+            // Always save to localStorage first (offline-first approach)
+            localStorage.setItem('salesData', JSON.stringify(data));
+            localStorage.setItem('lastSync', new Date().toISOString());
+            updateLastSync();
+            
+            // Add to sync queue if we have specific changes
+            if (changedCollection && changedItemId) {
+                const itemData = data[changedCollection].find(item => item.id === changedItemId);
+                addToSyncQueue(action, changedCollection, changedItemId, itemData);
             }
             
-            // Check if user is authenticated
-            if (!firebaseUser) {
-                console.log('🚫 User not authenticated - skipping Firebase sync');
+            updateConnectionStatus();
+        }
+
+        function queueBackgroundSync() {
+            // Debounce sync requests to avoid too frequent syncing
+            clearTimeout(window.syncTimeout);
+            window.syncTimeout = setTimeout(async () => {
+                if (!isSyncing && isFirebaseConnected && syncQueue.length > 0) {
+                    await processSyncQueue();
+                }
+            }, 2000); // Wait 2 seconds before syncing
+        }
+
+        async function processSyncQueue() {
+            if (isSyncing || !isFirebaseConnected || !database || !firebaseUser || syncQueue.length === 0) {
                 return;
             }
+
+            isSyncing = true;
+            updateConnectionStatus();
             
             try {
-                console.log('🔄 Starting Firebase Realtime Database sync for user:', firebaseUser.uid);
+                console.log(`🔄 Processing sync queue with ${syncQueue.length} items...`);
                 
-                // Ensure all data collections exist
-                const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
-                let totalSynced = 0;
+                let processedCount = 0;
+                let failedItems = [];
                 
-                // Initialize missing collections
-                collections.forEach(collectionName => {
-                    if (!data[collectionName]) {
-                        data[collectionName] = [];
-                        console.log(`🔧 Initialized empty ${collectionName} collection`);
-                    }
-                });
-                
-                for (const collectionName of collections) {
-                    console.log(`📦 Syncing ${collectionName} collection (${data[collectionName].length} items)...`);
-                    
+                // Process queue items one by one
+                for (const queueItem of [...syncQueue]) {
                     try {
-                        if (!data[collectionName] || data[collectionName].length === 0) {
-                            console.log(`⚠️ No data to sync for ${collectionName} - setting empty collection`);
-                            // Set empty object to clear any existing data but maintain structure
-                            await database.ref(`users/${firebaseUser.uid}/${collectionName}`).set({});
-                        } else {
-                            // Convert array to object with IDs as keys for Realtime Database
-                            const dataObject = {};
-                            data[collectionName].forEach(item => {
-                                if (item && item.id) {
-                                    dataObject[item.id] = {
-                                        ...item,
-                                        lastModified: firebase.database.ServerValue.TIMESTAMP,
+                        const collectionRef = database.collection(`users/${firebaseUser.uid}/${queueItem.collection}`);
+                        const docRef = collectionRef.doc(queueItem.itemId);
+                        
+                        switch (queueItem.action) {
+                            case 'create':
+                            case 'update':
+                                if (queueItem.data) {
+                                    await docRef.set({
+                                        ...queueItem.data,
+                                        lastModified: firebase.firestore.FieldValue.serverTimestamp(),
                                         syncedAt: new Date().toISOString(),
                                         userId: firebaseUser.uid
-                                    };
+                                    });
+                                    console.log(`✅ ${queueItem.action}d ${queueItem.collection}/${queueItem.itemId}`);
                                 } else {
-                                    console.warn(`⚠️ Skipping invalid item in ${collectionName}:`, item);
+                                    console.warn(`⚠️ No data for ${queueItem.action} operation on ${queueItem.collection}/${queueItem.itemId}`);
                                 }
-                            });
-                            
-                            // Set the entire collection at once for better performance
-                            await database.ref(`users/${firebaseUser.uid}/${collectionName}`).set(dataObject);
-                            console.log(`✅ Synced ${collectionName} collection (${data[collectionName].length} items)`);
-                            totalSynced += data[collectionName].length;
+                                break;
+                                
+                            case 'delete':
+                                await docRef.delete();
+                                console.log(`🗑️ Deleted ${queueItem.collection}/${queueItem.itemId}`);
+                                break;
+                                
+                            default:
+                                console.warn(`⚠️ Unknown action: ${queueItem.action}`);
                         }
                         
-                    } catch (collectionError) {
-                        console.error(`❌ Error syncing ${collectionName} collection:`, collectionError);
+                        // Remove successfully processed item from queue
+                        syncQueue = syncQueue.filter(item => item.id !== queueItem.id);
+                        processedCount++;
                         
-                        if (collectionError.code === 'PERMISSION_DENIED') {
-                            console.error('🚫 Permission denied - Firebase rules may be blocking access');
-                        } else if (collectionError.code === 'UNAUTHENTICATED') {
-                            console.error('🔐 User not authenticated properly');
+                    } catch (itemError) {
+                        console.error(`❌ Failed to sync ${queueItem.collection}/${queueItem.itemId}:`, itemError);
+                        
+                        // Increment retry count
+                        queueItem.retryCount = (queueItem.retryCount || 0) + 1;
+                        
+                        // Remove item if max retries reached
+                        if (queueItem.retryCount >= maxRetries) {
+                            console.log(`🚫 Max retries reached for ${queueItem.collection}/${queueItem.itemId}, removing from queue`);
+                            syncQueue = syncQueue.filter(item => item.id !== queueItem.id);
+                            failedItems.push(queueItem);
+                        } else {
+                            console.log(`🔄 Will retry ${queueItem.collection}/${queueItem.itemId} (${queueItem.retryCount}/${maxRetries})`);
                         }
-                        
-                        // Continue with other collections even if one fails
-                        continue;
                     }
                 }
                 
-                // Also sync metadata
+                // Save updated queue to localStorage
+                localStorage.setItem('syncQueue', JSON.stringify(syncQueue));
+                
+                console.log(`✅ Sync queue processed! ${processedCount} items synced, ${syncQueue.length} remaining, ${failedItems.length} failed`);
+                syncRetryCount = 0; // Reset retry count on success
+                
+                // Update sync metadata
                 try {
-                    await database.ref(`users/${firebaseUser.uid}/metadata`).set({
-                        lastSync: firebase.database.ServerValue.TIMESTAMP,
+                    await database.collection(`users/${firebaseUser.uid}/metadata`).doc('sync_info').set({
+                        lastSync: firebase.firestore.FieldValue.serverTimestamp(),
                         syncedAt: new Date().toISOString(),
-                        totalItems: totalSynced,
-                        collections: collections.length,
+                        processedItems: processedCount,
+                        queueLength: syncQueue.length,
+                        failedItems: failedItems.length,
+                        syncType: 'queue_processing',
                         version: '1.0'
                     });
-                    console.log('✅ Metadata synced successfully');
                 } catch (metaError) {
-                    console.error('❌ Error syncing metadata:', metaError);
+                    console.warn('⚠️ Could not update sync metadata:', metaError);
                 }
-                
-                console.log(`🎉 Firebase Realtime Database sync completed! ${totalSynced} items synced`);
-                updateLastSync();
                 
             } catch (error) {
-                console.error('❌ Error syncing to Firebase Realtime Database:', error);
+                console.error('❌ Sync queue processing failed:', error);
                 
-                if (error.code === 'PERMISSION_DENIED') {
-                    console.error('Firebase permission denied - check authentication');
-                } else if (error.code === 'UNAUTHENTICATED') {
-                    console.error('Authentication error - please login again');
+                // Implement retry logic for entire queue
+                syncRetryCount++;
+                if (syncRetryCount < maxRetries) {
+                    console.log(`🔄 Retrying queue processing in ${syncRetryCount * 5} seconds... (${syncRetryCount}/${maxRetries})`);
+                    setTimeout(() => {
+                        if (isFirebaseConnected && syncQueue.length > 0) {
+                            processSyncQueue();
+                        }
+                    }, syncRetryCount * 5000);
                 } else {
-                    console.error('Sync error - data saved locally');
+                    console.log('❌ Max retry attempts reached for queue processing. Will retry when connection is restored.');
+                    syncRetryCount = 0;
                 }
+                
+                if (error.code === 'permission-denied') {
+                    console.error('🚫 Permission denied - check Firestore rules');
+                } else if (error.code === 'unauthenticated') {
+                    console.error('🔐 Authentication error - user may need to re-login');
+                    isFirebaseConnected = false;
+                }
+            } finally {
+                isSyncing = false;
+                updateConnectionStatus();
+                updateLastSync();
             }
+        }
+
+        // Legacy sync function - now uses queue system
+        async function syncToFirebase() {
+            if (!isFirebaseConnected || !database || !firebaseUser) {
+                console.log('🚫 Firebase not available for sync');
+                return;
+            }
+            
+            console.log('🔄 Legacy sync function called - using queue system instead');
+            queueAllDataForSync();
         }
 
         async function loadFromFirebase() {
@@ -3283,7 +3488,7 @@
             }
             
             try {
-                console.log('📥 Loading data from Firebase Realtime Database for user:', firebaseUser.uid);
+                console.log('📥 Loading latest data from Firebase Firestore for user:', firebaseUser.uid);
                 
                 const collections = ['employees', 'stores', 'products', 'collections', 'sales', 'pricing'];
                 let hasData = false;
@@ -3297,15 +3502,14 @@
                 for (const collectionName of collections) {
                     try {
                         console.log(`📦 Loading ${collectionName} collection...`);
-                        const snapshot = await database.ref(`users/${firebaseUser.uid}/${collectionName}`).once('value');
-                        const collectionData = snapshot.val();
+                        const collectionRef = database.collection(`users/${firebaseUser.uid}/${collectionName}`);
+                        const snapshot = await collectionRef.orderBy('lastModified', 'desc').get();
                         
                         data[collectionName] = [];
                         
-                        if (collectionData && typeof collectionData === 'object') {
-                            // Convert object back to array
-                            Object.keys(collectionData).forEach(key => {
-                                const item = { ...collectionData[key] };
+                        if (!snapshot.empty) {
+                            snapshot.forEach(doc => {
+                                const item = { ...doc.data() };
                                 
                                 // Clean up Firebase metadata
                                 delete item.lastModified;
@@ -3328,9 +3532,9 @@
                     } catch (collectionError) {
                         console.error(`❌ Error loading ${collectionName} from Firebase:`, collectionError);
                         
-                        if (collectionError.code === 'PERMISSION_DENIED') {
+                        if (collectionError.code === 'permission-denied') {
                             console.log(`🚫 Permission denied for ${collectionName} - user may not be authenticated properly`);
-                        } else if (collectionError.code === 'UNAUTHENTICATED') {
+                        } else if (collectionError.code === 'unauthenticated') {
                             console.log(`🔐 User not authenticated for ${collectionName}`);
                         }
                         
@@ -3339,11 +3543,14 @@
                     }
                 }
                 
-                // Save to localStorage as backup
+                // Save to localStorage as backup after loading from Firebase
                 localStorage.setItem('salesData', JSON.stringify(data));
+                console.log('💾 Data backed up to local storage');
                 
+                // Clear sync queue since we have the latest data from Firebase
                 if (hasData && totalLoaded > 0) {
-                    console.log(`🎉 Data loaded from Firebase Realtime Database successfully! ${totalLoaded} items loaded`);
+                    clearSyncQueue();
+                    console.log(`🎉 Latest data loaded from Firebase! ${totalLoaded} items loaded`);
                     console.log('📊 Data summary after Firebase load:', {
                         employees: data.employees.length,
                         stores: data.stores.length,
@@ -3358,22 +3565,22 @@
                     // Load from local storage first
                     loadFromLocalStorage();
                     
-                    // If still no data exists, load sample data and sync it
+                    // If still no data exists, load sample data and queue it for sync
                     if (!data.employees || data.employees.length === 0) {
                         console.log('📦 No existing data found - loading sample data...');
                         loadSampleData();
                         
-                        // Sync sample data to Firebase after a short delay
-                        setTimeout(async () => {
-                            console.log('🔄 Syncing sample data to Firebase...');
-                            await syncToFirebase();
+                        // Queue sample data for sync after a short delay
+                        setTimeout(() => {
+                            console.log('📋 Queuing sample data for sync...');
+                            queueAllDataForSync();
                         }, 2000);
                     } else {
                         console.log('✅ Using existing local storage data');
-                        // Sync existing local data to Firebase
-                        setTimeout(async () => {
-                            console.log('🔄 Syncing local data to Firebase...');
-                            await syncToFirebase();
+                        // Queue existing local data for sync
+                        setTimeout(() => {
+                            console.log('📋 Queuing local data for sync...');
+                            queueAllDataForSync();
                         }, 1000);
                     }
                 }
@@ -3388,11 +3595,11 @@
                 }
                 
             } catch (error) {
-                console.error('❌ Error loading from Firebase Realtime Database:', error);
+                console.error('❌ Error loading from Firebase Firestore:', error);
                 
-                if (error.code === 'PERMISSION_DENIED') {
+                if (error.code === 'permission-denied') {
                     console.error('Firebase permission denied - using local data');
-                } else if (error.code === 'UNAUTHENTICATED') {
+                } else if (error.code === 'unauthenticated') {
                     console.error('Authentication error - using local data');
                 }
                 
@@ -3403,6 +3610,22 @@
                     loadSampleData();
                 }
             }
+        }
+
+        function queueAllDataForSync() {
+            console.log('📋 Queuing all local data for Firebase sync...');
+            
+            Object.keys(data).forEach(collectionName => {
+                if (data[collectionName] && Array.isArray(data[collectionName])) {
+                    data[collectionName].forEach(item => {
+                        if (item && item.id) {
+                            addToSyncQueue('create', collectionName, item.id, item);
+                        }
+                    });
+                }
+            });
+            
+            console.log(`📋 Queued ${syncQueue.length} items for sync`);
         }
 
         function setupRealtimeListeners() {
@@ -3521,6 +3744,30 @@
             } else {
                 console.log('📱 No local storage data found - initializing empty data');
                 initializeEmptyData();
+            }
+            
+            // Load pending changes from localStorage
+            loadPendingChanges();
+        }
+
+        function loadPendingChanges() {
+            const savedPendingChanges = localStorage.getItem('pendingChanges');
+            if (savedPendingChanges) {
+                try {
+                    const parsedPending = JSON.parse(savedPendingChanges);
+                    Object.keys(pendingChanges).forEach(key => {
+                        if (parsedPending[key] && Array.isArray(parsedPending[key])) {
+                            pendingChanges[key] = new Set(parsedPending[key]);
+                        }
+                    });
+                    
+                    const totalPending = Object.values(pendingChanges).reduce((total, set) => total + set.size, 0);
+                    if (totalPending > 0) {
+                        console.log(`📋 Loaded ${totalPending} pending changes from local storage`);
+                    }
+                } catch (error) {
+                    console.error('❌ Error parsing pending changes:', error);
+                }
             }
         }
 
@@ -3671,10 +3918,19 @@
 
         async function initializeFirebase() {
             try {
-                // Check if Firebase config is valid
+                // Check if Firebase config is valid (not demo config)
                 if (!isFirebaseConfigValid()) {
-                    console.log('⚠️ Firebase configuration incomplete - using local storage mode');
-                    console.log('Please update messagingSenderId and appId in the Firebase config');
+                    console.log('⚠️ Using demo Firebase configuration - switching to local storage mode');
+                    console.log('💡 To enable Firebase: Replace the demo config with your actual Firebase project settings');
+                    isFirebaseConnected = false;
+                    updateConnectionStatus();
+                    setDemoMode();
+                    return false;
+                }
+                
+                // Check if Firebase SDK is loaded
+                if (typeof firebase === 'undefined') {
+                    console.log('❌ Firebase SDK not loaded - using local storage mode');
                     isFirebaseConnected = false;
                     updateConnectionStatus();
                     setDemoMode();
@@ -3686,49 +3942,85 @@
                     firebase.initializeApp(firebaseConfig);
                 }
                 
-                // Initialize only Realtime Database (no Auth needed)
-                database = firebase.database();
+                // Initialize Firestore and Auth
+                database = firebase.firestore();
+                auth = firebase.auth();
                 
-                // Test database connection with actual write/read test
+                // Enable offline persistence for Firestore
                 try {
-                    const testRef = database.ref('connection_test');
+                    await database.enablePersistence();
+                    console.log('✅ Firestore offline persistence enabled');
+                } catch (err) {
+                    if (err.code === 'failed-precondition') {
+                        console.log('⚠️ Multiple tabs open, persistence can only be enabled in one tab at a time');
+                    } else if (err.code === 'unimplemented') {
+                        console.log('⚠️ Browser doesn\'t support persistence');
+                    }
+                }
+                
+                // Test Firestore connection with anonymous authentication
+                try {
+                    console.log('🔐 Signing in anonymously for testing...');
+                    const userCredential = await auth.signInAnonymously();
+                    firebaseUser = userCredential.user;
+                    console.log('✅ Anonymous authentication successful:', firebaseUser.uid);
+                    
+                    // Test Firestore read/write with timeout
+                    const testRef = database.collection('connection_test').doc('test');
                     const testData = { timestamp: Date.now(), test: true };
                     
-                    // Try to write test data
-                    await testRef.set(testData);
-                    console.log('✅ Firebase write test successful');
+                    // Set a timeout for the connection test
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('Connection timeout')), 10000);
+                    });
                     
-                    // Try to read test data
-                    const snapshot = await testRef.once('value');
-                    const readData = snapshot.val();
+                    // Try to write test data with timeout
+                    await Promise.race([testRef.set(testData), timeoutPromise]);
+                    console.log('✅ Firestore write test successful');
+                    
+                    // Try to read test data with timeout
+                    const snapshot = await Promise.race([testRef.get(), timeoutPromise]);
+                    const readData = snapshot.data();
                     
                     if (readData && readData.test === true) {
-                        console.log('✅ Firebase read test successful');
+                        console.log('✅ Firestore read test successful');
                         
                         // Clean up test data
-                        await testRef.remove();
-                        console.log('✅ Firebase delete test successful');
+                        await testRef.delete();
+                        console.log('✅ Firestore delete test successful');
                         
                         isFirebaseConnected = true;
                         updateConnectionStatus();
                         
-                        // Setup real-time connection monitoring
-                        setupConnectionMonitoring();
-                        
-                        console.log('🔥 Firebase initialized successfully with full read/write access');
+                        console.log('🔥 Firebase Firestore initialized successfully with full read/write access');
                         return true;
                     } else {
                         throw new Error('Read test failed - data mismatch');
                     }
                     
                 } catch (err) {
-                    console.log('❌ Firebase connection test failed:', err);
+                    console.log('❌ Firebase connection test failed:', err.message);
+                    
+                    if (err.message.includes('timeout')) {
+                        console.log('⏰ Firebase connection timed out - check your internet connection');
+                    } else if (err.message.includes('permission-denied') || err.message.includes('permission')) {
+                        console.log('🚫 Firebase permission denied - Firestore rules need authentication');
+                        console.log('💡 Opening Firebase rules setup guide...');
+                        
+                        // Show Firebase rules setup modal after a short delay
+                        setTimeout(() => {
+                            openModal('firebaseRulesModal');
+                        }, 2000);
+                    } else if (err.message.includes('not found') || err.message.includes('404')) {
+                        console.log('🔍 Firebase project not found - check your configuration');
+                    }
+                    
                     throw err;
                 }
                 
             } catch (error) {
-                console.error('❌ Firebase initialization error:', error);
-                console.log('📱 Falling back to local storage mode');
+                console.error('❌ Firebase initialization error:', error.message || error);
+                console.log('📱 Falling back to local storage mode - all data will be saved locally');
                 isFirebaseConnected = false;
                 updateConnectionStatus();
                 setDemoMode();
@@ -3737,23 +4029,46 @@
         }
 
         function setupConnectionMonitoring() {
-            if (!database) return;
+            if (!database || !auth) return;
             
-            // Monitor Firebase connection status in real-time
-            const connectedRef = database.ref('.info/connected');
-            connectedRef.on('value', (snapshot) => {
-                const connected = snapshot.val();
-                
-                if (connected) {
-                    console.log('🟢 Firebase connection: ONLINE');
+            // Monitor Firebase auth state changes
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    console.log('🟢 Firebase auth: AUTHENTICATED');
+                    firebaseUser = user;
                     isFirebaseConnected = true;
+                    
+                    // Try to sync pending changes when connection is restored
+                    const pendingCount = Object.values(pendingChanges).reduce((total, set) => total + set.size, 0);
+                    if (pendingCount > 0) {
+                        console.log(`🔄 Connection restored - syncing ${pendingCount} pending changes`);
+                        queueBackgroundSync();
+                    }
                 } else {
-                    console.log('🔴 Firebase connection: OFFLINE');
+                    console.log('🔴 Firebase auth: NOT AUTHENTICATED');
+                    firebaseUser = null;
                     isFirebaseConnected = false;
                 }
                 
                 updateConnectionStatus();
                 updateMonitorButton();
+            });
+            
+            // Monitor online/offline status
+            window.addEventListener('online', () => {
+                console.log('🌐 Network connection restored');
+                if (isFirebaseConnected) {
+                    const pendingCount = Object.values(pendingChanges).reduce((total, set) => total + set.size, 0);
+                    if (pendingCount > 0) {
+                        console.log(`🔄 Network restored - syncing ${pendingCount} pending changes`);
+                        queueBackgroundSync();
+                    }
+                }
+            });
+            
+            window.addEventListener('offline', () => {
+                console.log('📴 Network connection lost - continuing in offline mode');
+                updateConnectionStatus();
             });
         }
 
@@ -3773,6 +4088,51 @@
         }
 
         // Firebase disconnect function removed - using permanent connection
+
+        // Firebase connection test function
+        async function testFirebaseConnection() {
+            const testBtn = document.querySelector('#firebaseRulesModal .btn-primary');
+            const originalText = testBtn.innerHTML;
+            
+            testBtn.innerHTML = '🔄 Testing...';
+            testBtn.disabled = true;
+            
+            try {
+                console.log('🧪 Testing Firebase connection with new rules...');
+                
+                // Re-initialize Firebase
+                const success = await initializeFirebase();
+                
+                if (success) {
+                    // Show success message
+                    testBtn.innerHTML = '✅ Connected!';
+                    testBtn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+                    
+                    setTimeout(() => {
+                        closeModal('firebaseRulesModal');
+                        showAlert('🎉 Firebase connected successfully! Your data will now sync to the cloud.', 'success');
+                        
+                        // Reload data from Firebase
+                        if (currentUser) {
+                            loadFromFirebase();
+                        }
+                    }, 2000);
+                } else {
+                    throw new Error('Connection test failed');
+                }
+                
+            } catch (error) {
+                console.error('❌ Firebase test failed:', error);
+                testBtn.innerHTML = '❌ Failed - Check Rules';
+                testBtn.style.background = 'linear-gradient(135deg, #DC2626, #B91C1C)';
+                
+                setTimeout(() => {
+                    testBtn.innerHTML = originalText;
+                    testBtn.style.background = '';
+                    testBtn.disabled = false;
+                }, 3000);
+            }
+        }
 
         // Firebase monitoring function
         function checkFirebaseStatus() {
@@ -3856,5 +4216,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bd4b5175a6f9ec',t:'MTc1NDYzODA3OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96bd6f02b3eef9cb',t:'MTc1NDYzOTU0MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
